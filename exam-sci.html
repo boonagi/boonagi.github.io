@@ -206,7 +206,7 @@ function home(){
         ${b!==null?`<span class="best">คะแนนดีที่สุด ${b}/30</span>`:`<span class="none">ยังไม่เคยทำ</span>`}</div>`;
     }).join('')}</div>
     <p class="sub" style="margin-top:14px">แตะปีที่ต้องการ แล้วเลือกได้ว่าจะ <b>🎯 ฝึก</b> (ตรวจทีละข้อ พร้อมวิธีคิด) หรือ <b>⏱️ สอบเสมือนจริง</b> (จับเวลา 90 นาที)</p>
-    <p class="foot">🔒 ความเป็นส่วนตัว: เว็บนี้<b>ไม่มีการเก็บข้อมูลใด ๆ</b> ขึ้นเซิร์ฟเวอร์ — โปรไฟล์และคะแนนทั้งหมดบันทึกอยู่ในเบราว์เซอร์ของคุณเท่านั้น<br>ข้อสอบและเฉลยจากคลังข้อสอบ <a href="https://www.tedet.or.th/main/exam-library.asp" target="_blank" rel="noopener">tedet.or.th</a> · ใช้เพื่อการฝึกฝนส่วนตัว</p>`;
+    <p class="foot">🔒 ความเป็นส่วนตัว: เว็บนี้<b>ไม่มีการเก็บข้อมูลใด ๆ</b> ขึ้นเซิร์ฟเวอร์ — โปรไฟล์และคะแนนทั้งหมดบันทึกอยู่ในเบราว์เซอร์ของคุณเท่านั้น<br>ข้อสอบและเฉลยจากคลังข้อสอบ <a href="https://www.tedet.or.th/main/exam-library.asp" target="_blank" rel="noopener">tedet.or.th</a> · ใช้เพื่อการฝึกฝนส่วนตัว · <b>By PartnerX</b></p>`;
   document.querySelectorAll('.ycard').forEach(el=>{
     const go = ()=> modeDialog(el.dataset.y);
     el.addEventListener('click', go);
