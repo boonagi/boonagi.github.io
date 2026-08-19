@@ -129,9 +129,59 @@ const app = $('#app');
 const CIRC = ['','①','②','③','④','⑤'];
 const YEARS = Object.keys(EXAM_DATA).sort();
 const fmtTime = s => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+/* ---------- โปรไฟล์รายคน (เก็บในเครื่อง ใช้ชุดเดียวกับแอปหลัก) ---------- */
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+const PROF = {
+  list(){ try{ return JSON.parse(localStorage.getItem('tedet-profiles')||'[]'); }catch(e){ return []; } },
+  save(l){ localStorage.setItem('tedet-profiles', JSON.stringify(l)); },
+  get active(){ return localStorage.getItem('tedet-active') || ''; },
+  set active(n){ localStorage.setItem('tedet-active', n); },
+};
+function showProfiles(force){
+  if(!force && PROF.active && PROF.list().includes(PROF.active)) return;
+  const bd = document.createElement('div'); bd.className='modal-backdrop';
+  document.body.appendChild(bd);
+  const draw = ()=>{
+    const l = PROF.list();
+    bd.innerHTML = `<div class="card modal">
+      <h2>👤 ใครกำลังใช้อยู่?</h2>
+      <p class="sub" style="margin:4px 0 10px">คะแนนและสถิติจะแยกเก็บของแต่ละคนในเครื่องนี้</p>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">
+        ${l.map(n=>`<div class="row" style="flex-wrap:nowrap">
+          <button class="btn ${n===PROF.active?'':'ghost'}" data-p="${n}" style="flex:1;justify-content:flex-start">👤 ${esc(n)}</button>
+          <button class="btn ghost" data-del="${n}" style="padding:8px 12px" aria-label="ลบโปรไฟล์ ${esc(n)}">🗑</button></div>`).join('')
+        || '<p class="sub">ยังไม่มีโปรไฟล์ — พิมพ์ชื่อด้านล่างเพื่อเริ่ม</p>'}
+      </div>
+      <div class="row" style="flex-wrap:nowrap">
+        <input id="newProf" maxlength="20" placeholder="พิมพ์ชื่อ เช่น น้องภูมิ"
+          style="font:inherit;flex:1;padding:9px 12px;border-radius:10px;border:2px solid var(--line);background:var(--card);color:var(--ink)">
+        <button class="btn warn" id="addProf">เพิ่ม</button>
+      </div></div>`;
+    bd.querySelectorAll('[data-p]').forEach(b=> b.onclick = ()=>{ PROF.active=b.dataset.p; bd.remove(); home(); });
+    bd.querySelectorAll('[data-del]').forEach(b=> b.onclick = ()=>{
+      const n=b.dataset.del;
+      if(!confirm(`ลบโปรไฟล์ "${n}" พร้อมคะแนนทั้งหมดของเขา?`)) return;
+      PROF.save(PROF.list().filter(x=>x!==n));
+      ['tedet-history','tedet-real-math','tedet-real-sci'].forEach(k=> localStorage.removeItem(k+':'+n));
+      if(PROF.active===n) PROF.active='';
+      draw();
+    });
+    const add = ()=>{
+      const inp=bd.querySelector('#newProf');
+      const name=inp.value.trim().replace(/["<>&]/g,'').slice(0,20);
+      if(!name) { inp.focus(); return; }
+      const l=PROF.list();
+      if(!l.includes(name)){ l.push(name); PROF.save(l); }
+      PROF.active=name; bd.remove(); home();
+    };
+    bd.querySelector('#addProf').onclick=add;
+    bd.querySelector('#newProf').addEventListener('keydown', e=>{ if(e.key==='Enter') add(); });
+  };
+  draw();
+}
 const store = {
-  get hist(){ try{ return JSON.parse(localStorage.getItem('tedet-real-'+SUBJ_KEY)||'[]'); }catch(e){ return []; } },
-  push(r){ const h=this.hist; h.unshift(r); localStorage.setItem('tedet-real-'+SUBJ_KEY, JSON.stringify(h.slice(0,50))); },
+  get hist(){ try{ return JSON.parse(localStorage.getItem('tedet-real-'+SUBJ_KEY+':'+PROF.active)||'[]'); }catch(e){ return []; } },
+  push(r){ const h=this.hist; h.unshift(r); localStorage.setItem('tedet-real-'+SUBJ_KEY+':'+PROF.active, JSON.stringify(h.slice(0,50))); },
   best(y){ const s=this.hist.filter(r=>r.year===y).map(r=>r.score); return s.length?Math.max(...s):null; }
 };
 let S = {};
@@ -145,7 +195,8 @@ YEARS.forEach(y=>{ const d=EXAM_DATA[y];
 function home(){
   clearInterval(S.timerId);
   app.innerHTML = `
-    <h1>🔬 ${document.title}</h1>
+    <div class="row"><h1 style="margin:0">🔬 ${document.title}</h1><span class="grow"></span>
+      <button class="chip" id="profChip" style="border:none;cursor:pointer;font-family:inherit">👤 ${esc(PROF.active)||'เลือกโปรไฟล์'}</button></div>
     <p class="sub">ข้อสอบจริงโครงการ TEDET วิชา${SUBJ_NAME} ป.5 · 30 ข้อ / 90 นาที — เลือกปีที่จะทำได้เลย
     ${SUBJ_KEY==='sci'?'<br><b>กติกาสำคัญ:</b> บางข้อมีคำตอบถูกมากกว่า 1 ข้อ ต้องเลือกให้ครบทุกข้อจึงได้คะแนน':'<br><b>วิธีตอบ:</b> ข้อปรนัยให้กรอกหมายเลขตัวเลือก (1–5) ข้อคำนวณให้กรอกคำตอบเป็นตัวเลข'}</p>
     <div class="years">${YEARS.map(y=>{
@@ -161,6 +212,8 @@ function home(){
     el.addEventListener('click', go);
     el.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){e.preventDefault(); go();} });
   });
+  $('#profChip').onclick = ()=> showProfiles(true);
+  showProfiles(false);
 }
 
 function modeDialog(year){

@@ -395,9 +395,58 @@ const QUESTIONS = [
 const SUBJ = { math:{name:'คณิตศาสตร์', chip:'math', emoji:'🧮'}, sci:{name:'วิทยาศาสตร์', chip:'sci', emoji:'🔬'} };
 const PRAISE = ['เก่งมาก! 🎉','สุดยอดไปเลย! ⭐','ถูกต้อง! 👏','ยอดเยี่ยม! 🚀','แม่นมาก! 💯'];
 const CHEER = ['ยังไม่ถูก ไม่เป็นไร มาดูวิธีคิดกัน 💪','เกือบแล้ว! ลองดูคำอธิบายนะ 🌱','ผิดได้คือกำลังเรียนรู้ มาดูเฉลยกัน ✨'];
+/* ---------- โปรไฟล์รายคน (เก็บในเครื่อง) ---------- */
+const PROF = {
+  list(){ try{ return JSON.parse(localStorage.getItem('tedet-profiles')||'[]'); }catch(e){ return []; } },
+  save(l){ localStorage.setItem('tedet-profiles', JSON.stringify(l)); },
+  get active(){ return localStorage.getItem('tedet-active') || ''; },
+  set active(n){ localStorage.setItem('tedet-active', n); },
+};
+function showProfiles(force){
+  if(!force && PROF.active && PROF.list().includes(PROF.active)) return;
+  const bd = document.createElement('div'); bd.className='modal-backdrop';
+  document.body.appendChild(bd);
+  const draw = ()=>{
+    const l = PROF.list();
+    bd.innerHTML = `<div class="card modal">
+      <h2>👤 ใครกำลังใช้อยู่?</h2>
+      <p class="sub" style="margin:4px 0 10px">คะแนนและประวัติจะแยกเก็บของแต่ละคนในเครื่องนี้</p>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">
+        ${l.map(n=>`<div class="row" style="flex-wrap:nowrap">
+          <button class="btn ${n===PROF.active?'':'ghost'}" data-p="${n}" style="flex:1;justify-content:flex-start">👤 ${esc(n)}</button>
+          <button class="btn ghost" data-del="${n}" style="padding:8px 12px" aria-label="ลบโปรไฟล์ ${esc(n)}">🗑</button></div>`).join('')
+        || '<p class="sub">ยังไม่มีโปรไฟล์ — พิมพ์ชื่อด้านล่างเพื่อเริ่ม</p>'}
+      </div>
+      <div class="row" style="flex-wrap:nowrap">
+        <input id="newProf" maxlength="20" placeholder="พิมพ์ชื่อ เช่น น้องภูมิ"
+          style="font:inherit;flex:1;padding:9px 12px;border-radius:10px;border:2px solid var(--line);background:var(--card);color:var(--ink)">
+        <button class="btn warn" id="addProf">เพิ่ม</button>
+      </div></div>`;
+    bd.querySelectorAll('[data-p]').forEach(b=> b.onclick = ()=>{ PROF.active=b.dataset.p; bd.remove(); home(); });
+    bd.querySelectorAll('[data-del]').forEach(b=> b.onclick = ()=>{
+      const n=b.dataset.del;
+      if(!confirm(`ลบโปรไฟล์ "${n}" พร้อมคะแนนทั้งหมดของเขา?`)) return;
+      PROF.save(PROF.list().filter(x=>x!==n));
+      ['tedet-history','tedet-real-math','tedet-real-sci'].forEach(k=> localStorage.removeItem(k+':'+n));
+      if(PROF.active===n) PROF.active='';
+      draw();
+    });
+    const add = ()=>{
+      const inp=bd.querySelector('#newProf');
+      const name=inp.value.trim().replace(/["<>&]/g,'').slice(0,20);
+      if(!name) { inp.focus(); return; }
+      const l=PROF.list();
+      if(!l.includes(name)){ l.push(name); PROF.save(l); }
+      PROF.active=name; bd.remove(); home();
+    };
+    bd.querySelector('#addProf').onclick=add;
+    bd.querySelector('#newProf').addEventListener('keydown', e=>{ if(e.key==='Enter') add(); });
+  };
+  draw();
+}
 const store = {
-  get history(){ try{ return JSON.parse(localStorage.getItem('tedet-history')||'[]'); }catch(e){ return []; } },
-  push(r){ const h=this.history; h.unshift(r); localStorage.setItem('tedet-history', JSON.stringify(h.slice(0,20))); }
+  get history(){ try{ return JSON.parse(localStorage.getItem('tedet-history:'+PROF.active)||'[]'); }catch(e){ return []; } },
+  push(r){ const h=this.history; h.unshift(r); localStorage.setItem('tedet-history:'+PROF.active, JSON.stringify(h.slice(0,20))); }
 };
 let S = {}; // session state
 
@@ -414,7 +463,8 @@ function home(){
   const h = store.history;
   const histRows = h.slice(0,5).map(r=>`<tr><td>${r.date}</td><td><span class="chip ${r.subj==='sci'?'sci':'math'}">${r.subjName}</span></td><td>${r.mode}</td><td><b>${r.score}/${r.total}</b></td></tr>`).join('');
   app.innerHTML = `
-    <header class="brand"><span class="logo">TEDET Trainer</span><span class="chip plain">ป.5 · คณิต + วิทย์</span></header>
+    <header class="brand"><span class="logo">TEDET Trainer</span><span class="chip plain">ป.5 · คณิต + วิทย์</span>
+      <button class="chip math" id="profChip" style="border:none;cursor:pointer;font-family:inherit;margin-left:auto">👤 ${esc(PROF.active)||'เลือกโปรไฟล์'}</button></header>
     <p class="sub">ฝึกทำข้อสอบแนว TEDET ตามโครงสร้างข้อสอบจริง — คณิต 30 ข้อ 90 นาที (ปรนัย + เติมตัวเลข) และวิทย์แบบ "เลือกได้มากกว่า 1 คำตอบ"</p>
     <div class="modes">
       <div class="mode m1" role="button" tabindex="0" data-go="practice">
@@ -438,6 +488,8 @@ function home(){
       </div>
     </div>
     <p class="foot">สร้างเพื่อการฝึกฝนส่วนตัว · แนวข้อสอบอ้างอิงโครงสร้างจากโครงการ TEDET</p>`;
+  $('#profChip').onclick = ()=> showProfiles(true);
+  showProfiles(false);   // ครั้งแรก/ยังไม่เลือกคน → เด้งให้เลือกก่อน
   // บน claude.ai เปิดห้องสอบเป็น artifact แยก — ที่อื่น (GitHub Pages / เปิดไฟล์ในเครื่อง) ใช้ไฟล์ข้างกัน
   if(location.hostname==='claude.ai'){
     $('#lnkMath').href = 'https://claude.ai/code/artifact/7618e4bc-6f96-42a4-aec0-5375569020a1';
