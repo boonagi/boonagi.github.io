@@ -1,0 +1,3 @@
+exams/
+*.pyc
+__pycache__/

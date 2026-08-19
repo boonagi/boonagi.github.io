@@ -1,0 +1,425 @@
+<title>__TITLE__</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mitr:wght@500;600&family=Sarabun:ital,wght@0,400;0,500;0,700;1,400&display=swap">
+<style>
+  :root{
+    --paper:#F6F8FC; --grid:#E7ECF6; --card:#FFFFFF; --line:#D9E1F0;
+    --ink:#22304A; --muted:#5D6B85;
+    --math:#3B5BDB; --math-soft:#E8ECFB; --sci:#0CA678; --sci-soft:#E3F7F0;
+    --accent:#E8590C; --ok:#2B8A3E; --ok-soft:#E6F6EA; --bad:#C92A2A; --bad-soft:#FDEBEB;
+    --flag:#F59E0B; --shadow:0 2px 10px rgba(34,48,74,.08);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#0F1522; --grid:#1A2335; --card:#182136; --line:#283552;
+      --ink:#E8EDF7; --muted:#96A3BE;
+      --math:#8CA1FF; --math-soft:#232D4E; --sci:#3BD9A5; --sci-soft:#123B31;
+      --accent:#FFA94D; --ok:#69DB7C; --ok-soft:#15301C; --bad:#FF8787; --bad-soft:#3A1B1B;
+      --flag:#FCC419; --shadow:0 2px 10px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#0F1522; --grid:#1A2335; --card:#182136; --line:#283552;
+    --ink:#E8EDF7; --muted:#96A3BE;
+    --math:#8CA1FF; --math-soft:#232D4E; --sci:#3BD9A5; --sci-soft:#123B31;
+    --accent:#FFA94D; --ok:#69DB7C; --ok-soft:#15301C; --bad:#FF8787; --bad-soft:#3A1B1B;
+    --flag:#FCC419; --shadow:0 2px 10px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; color:var(--ink); font-family:'Sarabun',system-ui,sans-serif; font-size:17px; line-height:1.6;
+    background:var(--paper);
+    background-image:linear-gradient(var(--grid) 1px, transparent 1px),linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size:28px 28px; min-height:100vh;
+  }
+  .wrap{max-width:1180px; margin:0 auto; padding:18px 16px 90px}
+  h1,h2,h3,.btn,.timer,.ycard b{font-family:'Mitr','Sarabun',sans-serif; font-weight:600}
+  h1{font-size:1.6rem; margin:.2em 0; text-wrap:balance}
+  .sub{color:var(--muted)}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px 20px; box-shadow:var(--shadow)}
+  .btn{display:inline-flex; align-items:center; gap:8px; cursor:pointer; border:none; border-radius:12px;
+    padding:10px 18px; font-size:1rem; color:#fff; background:var(--subj); transition:filter .12s}
+  .btn:hover{filter:brightness(1.07)}
+  .btn:focus-visible{outline:3px solid var(--flag); outline-offset:2px}
+  .btn.warn{background:var(--accent)}
+  .btn.ghost{background:transparent; color:var(--ink); border:2px solid var(--line)}
+  .btn:disabled{opacity:.45; cursor:not-allowed}
+  .row{display:flex; gap:12px; flex-wrap:wrap; align-items:center}
+  .grow{flex:1}
+  .chip{display:inline-block; padding:3px 12px; border-radius:999px; font-size:.85rem; font-weight:700; background:var(--subj-soft); color:var(--subj)}
+  .chip.plain{background:var(--paper); color:var(--muted); border:1px solid var(--line)}
+
+  .years{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; margin-top:14px}
+  .ycard{cursor:pointer; border:2px solid var(--line); border-radius:14px; padding:14px; background:var(--card); text-align:center; transition:transform .1s,border-color .1s}
+  .ycard:hover{transform:translateY(-3px); border-color:var(--subj)}
+  .ycard b{font-size:1.5rem; color:var(--subj)}
+  .ycard .best{font-size:.85rem; color:var(--ok); font-weight:700}
+  .ycard .none{font-size:.85rem; color:var(--muted)}
+
+  .exambar{position:sticky; top:0; z-index:20; background:var(--card); border-bottom:2px solid var(--line);
+    padding:8px 14px; margin:-18px -16px 14px; display:flex; align-items:center; gap:12px; flex-wrap:wrap}
+  .timer{font-size:1.25rem; font-variant-numeric:tabular-nums; color:var(--subj)}
+  .timer.low{color:var(--bad); animation:blink 1s infinite}
+  @keyframes blink{50%{opacity:.5}}
+  @media (prefers-reduced-motion: reduce){ .timer.low{animation:none} .ycard:hover{transform:none} }
+
+  .examgrid{display:grid; grid-template-columns:1fr 330px; gap:16px; align-items:start}
+  .pages{overflow-x:auto; border-radius:10px}
+  .pages img{display:block; width:var(--zoom,100%); max-width:none; margin:0 auto 10px; border:1px solid var(--line); border-radius:8px; background:#fff}
+  .sheet{position:sticky; top:64px; max-height:calc(100vh - 84px); overflow-y:auto}
+  .srow{display:flex; align-items:center; gap:8px; padding:7px 6px; border-bottom:1px solid var(--line)}
+  .srow:last-child{border-bottom:none}
+  .srow .qn{flex:none; width:34px; font-weight:700; color:var(--muted); font-variant-numeric:tabular-nums}
+  .srow.done .qn{color:var(--subj)}
+  .numin{font:inherit; font-size:1.05rem; font-weight:700; text-align:center; width:90px; padding:6px;
+    border-radius:9px; border:2px solid var(--line); background:var(--card); color:var(--ink)}
+  .numin:focus{outline:none; border-color:var(--subj)}
+  .ob{width:38px; height:38px; border-radius:50%; border:2px solid var(--line); background:var(--card); color:var(--muted);
+    font:inherit; font-weight:700; cursor:pointer; padding:0}
+  .ob.on{background:var(--subj); border-color:var(--subj); color:#fff}
+  .ob:focus-visible{outline:3px solid var(--flag); outline-offset:1px}
+  .srow{flex-wrap:wrap}
+  .srow.right{background:var(--ok-soft)}
+  .srow.wrong{background:var(--bad-soft)}
+  .srow .fb{width:100%; font-size:.88rem; padding-left:34px}
+  .checkq{padding:6px 12px; border-radius:9px; font-size:.9rem}
+  .explbtn{background:none; border:none; cursor:pointer; color:var(--subj); font:inherit; font-size:.88rem; font-weight:700; padding:0}
+  .expl-backdrop{position:fixed; inset:0; background:rgba(15,21,34,.6); z-index:60; display:flex; align-items:center; justify-content:center; padding:12px}
+  .expl-panel{background:var(--card); border-radius:14px; max-width:920px; width:100%; height:92vh; display:flex; flex-direction:column}
+  .expl-head{display:flex; align-items:center; gap:10px; padding:10px 16px; border-bottom:2px solid var(--line)}
+  .expl-body{overflow-y:auto; padding:10px}
+  .expl-body img{display:block; width:100%; margin-bottom:8px; border:1px solid var(--line); border-radius:8px; background:#fff}
+
+  @media (max-width:900px){
+    .examgrid{grid-template-columns:1fr}
+    .sheet{position:fixed; left:0; right:0; bottom:0; top:auto; z-index:30; max-height:52vh;
+      border-radius:16px 16px 0 0; border-top:2px solid var(--line); box-shadow:0 -6px 24px rgba(0,0,0,.18);
+      transform:translateY(calc(100% - 52px)); transition:transform .2s}
+    .sheet.open{transform:none}
+    .sheet .handle{position:sticky; top:0; background:var(--card); padding:10px 16px; cursor:pointer;
+      font-family:'Mitr'; color:var(--subj); border-bottom:1px solid var(--line); display:flex; justify-content:space-between}
+  }
+  @media (min-width:901px){ .sheet .handle{display:none} }
+
+  .scorehero{text-align:center; padding:26px}
+  .scorebig{font-family:'Mitr'; font-size:3rem; font-weight:600; color:var(--subj); line-height:1}
+  table.res{border-collapse:collapse; width:100%; font-variant-numeric:tabular-nums}
+  table.res td,table.res th{border:1px solid var(--line); padding:6px 10px; text-align:center}
+  table.res th{background:var(--paper)}
+  .mark.ok{color:var(--ok); font-weight:700} .mark.bad{color:var(--bad); font-weight:700}
+  .modal-backdrop{position:fixed; inset:0; background:rgba(15,21,34,.55); display:flex; align-items:center; justify-content:center; z-index:50; padding:16px}
+  .modal{max-width:420px; width:100%}
+  a{color:var(--subj)}
+  .foot{margin-top:26px; font-size:.85rem; color:var(--muted); text-align:center}
+</style>
+<div class="wrap" id="app"></div>
+<script>
+"use strict";
+const SUBJ_KEY = '__SUBJ__';           // 'math' | 'sci'
+const SUBJ_NAME = '__SUBJ_NAME__';
+const PDF_SUBJ = '__PDF_SUBJ__';       // Math | Science
+document.documentElement.style.setProperty('--subj', `var(--${SUBJ_KEY})`);
+document.documentElement.style.setProperty('--subj-soft', `var(--${SUBJ_KEY}-soft)`);
+
+/* EXAM_DATA: {year: {pages:[dataURI,...], key:[[alt,...],...]}}
+   key: แต่ละข้อ = รายการ "คำตอบที่ยอมรับ" (ทางเลือก) — คณิต: ทางเลือกละ 1 ตัวเลข, วิทย์: ทางเลือกละ 1 ชุดตัวเลือก */
+const EXAM_DATA = __DATA__;
+
+const $ = s => document.querySelector(s);
+const app = $('#app');
+const CIRC = ['','①','②','③','④','⑤'];
+const YEARS = Object.keys(EXAM_DATA).sort();
+const fmtTime = s => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+const store = {
+  get hist(){ try{ return JSON.parse(localStorage.getItem('tedet-real-'+SUBJ_KEY)||'[]'); }catch(e){ return []; } },
+  push(r){ const h=this.hist; h.unshift(r); localStorage.setItem('tedet-real-'+SUBJ_KEY, JSON.stringify(h.slice(0,50))); },
+  best(y){ const s=this.hist.filter(r=>r.year===y).map(r=>r.score); return s.length?Math.max(...s):null; }
+};
+let S = {};
+
+/* self-check */
+YEARS.forEach(y=>{ const d=EXAM_DATA[y];
+  if(d.key.length!==30) console.error('key length !=30', y, d.key.length);
+  if(!d.pages.length) console.error('no pages', y);
+});
+
+function home(){
+  clearInterval(S.timerId);
+  app.innerHTML = `
+    <h1>__EMOJI__ ${document.title}</h1>
+    <p class="sub">ข้อสอบจริงโครงการ TEDET วิชา${SUBJ_NAME} ป.5 · 30 ข้อ / 90 นาที — เลือกปีที่จะทำได้เลย
+    ${SUBJ_KEY==='sci'?'<br><b>กติกาสำคัญ:</b> บางข้อมีคำตอบถูกมากกว่า 1 ข้อ ต้องเลือกให้ครบทุกข้อจึงได้คะแนน':'<br><b>วิธีตอบ:</b> ข้อปรนัยให้กรอกหมายเลขตัวเลือก (1–5) ข้อคำนวณให้กรอกคำตอบเป็นตัวเลข'}</p>
+    <div class="years">${YEARS.map(y=>{
+      const b = store.best(y);
+      return `<div class="ycard" role="button" tabindex="0" data-y="${y}">
+        <b>ปี ${y}</b><br>
+        ${b!==null?`<span class="best">คะแนนดีที่สุด ${b}/30</span>`:`<span class="none">ยังไม่เคยทำ</span>`}</div>`;
+    }).join('')}</div>
+    <p class="sub" style="margin-top:14px">แตะปีที่ต้องการ แล้วเลือกได้ว่าจะ <b>🎯 ฝึก</b> (ตรวจทีละข้อ พร้อมวิธีคิด) หรือ <b>⏱️ สอบเสมือนจริง</b> (จับเวลา 90 นาที)</p>
+    <p class="foot">ข้อสอบและเฉลยจากคลังข้อสอบ <a href="https://www.tedet.or.th/main/exam-library.asp" target="_blank" rel="noopener">tedet.or.th</a> · ใช้เพื่อการฝึกฝนส่วนตัว</p>`;
+  document.querySelectorAll('.ycard').forEach(el=>{
+    const go = ()=> modeDialog(el.dataset.y);
+    el.addEventListener('click', go);
+    el.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){e.preventDefault(); go();} });
+  });
+}
+
+function modeDialog(year){
+  const hasExpl = hasSolutions(year);
+  const bd = document.createElement('div');
+  bd.className='modal-backdrop';
+  bd.innerHTML = `<div class="card modal">
+    <h2>ปี ${year} — เลือกโหมด</h2>
+    <div style="display:flex; flex-direction:column; gap:10px; margin-top:12px">
+      <button class="btn" id="mPractice">🎯 โหมดฝึก — ตรวจทีละข้อ + วิธีคิด${hasExpl?'':' (ปีนี้มีเฉพาะคำตอบ)'}</button>
+      <button class="btn warn" id="mTimed">⏱️ สอบเสมือนจริง — จับเวลา 90 นาที</button>
+      <button class="btn ghost" id="mFree">🕊️ สอบแบบไม่จับเวลา</button>
+      <button class="btn ghost" id="mCancel" style="border:none">ยกเลิก</button>
+    </div></div>`;
+  document.body.appendChild(bd);
+  bd.querySelector('#mPractice').onclick=()=>{ bd.remove(); startExam(year,'practice'); };
+  bd.querySelector('#mTimed').onclick=()=>{ bd.remove(); startExam(year,'timed'); };
+  bd.querySelector('#mFree').onclick=()=>{ bd.remove(); startExam(year,'free'); };
+  bd.querySelector('#mCancel').onclick=()=>bd.remove();
+  bd.addEventListener('click', e=>{ if(e.target===bd) bd.remove(); });
+}
+
+/* ---------- เฉลยพร้อมวิธีทำรายข้อ (ตัดจากเฉลยฉบับจริง) ---------- */
+function hasSolutions(y){
+  const d = EXAM_DATA[y];
+  return !!(d.sol && Object.keys(d.sol).length) || (d.expl||[]).length>0;
+}
+function showExpl(qnum){
+  const d = EXAM_DATA[S.year];
+  if(d.sol && Object.keys(d.sol).length){ solModal(qnum); return; }
+  const pages = d.expl||[];
+  if(!pages.length){ alert('ปี '+S.year+' เฉลยทางการมีเฉพาะคำตอบ ไม่มีวิธีทำ'); return; }
+  const bd = document.createElement('div');
+  bd.className='expl-backdrop';
+  bd.innerHTML = `<div class="expl-panel">
+    <div class="expl-head">
+      <b style="font-family:'Mitr'">📖 วิธีคิดฉบับจริง ปี ${S.year}</b>
+      <span class="sub">เลื่อนหา "ข้อ ${qnum}"</span><span class="grow"></span>
+      <button class="btn ghost" id="xclose" style="padding:6px 14px">✕ ปิด</button>
+    </div>
+    <div class="expl-body">${pages.map((p,i)=>`<img loading="lazy" src="${p}" alt="หน้าเฉลย ${i+1}">`).join('')}</div></div>`;
+  document.body.appendChild(bd);
+  bd.querySelector('#xclose').onclick=()=>bd.remove();
+  bd.addEventListener('click', e=>{ if(e.target===bd) bd.remove(); });
+}
+function solModal(qnum){
+  const d = EXAM_DATA[S.year];
+  const bd = document.createElement('div');
+  bd.className='expl-backdrop';
+  document.body.appendChild(bd);
+  const draw = ()=>{
+    const strips = d.sol[qnum]||[];
+    bd.innerHTML = `<div class="expl-panel" style="height:auto; max-height:92vh">
+      <div class="expl-head">
+        <button class="btn ghost" id="xprev" style="padding:6px 10px" ${qnum<=1?'disabled':''}>◀</button>
+        <b style="font-family:'Mitr'">📖 วิธีทำข้อ ${qnum}</b>
+        <button class="btn ghost" id="xnext" style="padding:6px 10px" ${qnum>=30?'disabled':''}>▶</button>
+        <span class="chip plain">ปี ${S.year} · เฉลยฉบับจริง</span>
+        <span class="grow"></span>
+        <button class="btn ghost" id="xclose" style="padding:6px 14px">✕ ปิด</button>
+      </div>
+      <div class="expl-body">
+        <p style="margin:2px 0 8px"><b>คำตอบ:</b> ${keyText(d.key[qnum-1])}</p>
+        ${strips.length?strips.map(p=>`<img src="${p}" alt="วิธีทำข้อ ${qnum}">`).join('')
+          :'<p class="sub">ข้อนี้ไม่มีคำอธิบายเพิ่มเติมในเฉลยทางการ</p>'}
+      </div></div>`;
+    bd.querySelector('#xclose').onclick=()=>bd.remove();
+    bd.querySelector('#xprev').onclick=()=>{ if(qnum>1){qnum--; draw();} };
+    bd.querySelector('#xnext').onclick=()=>{ if(qnum<30){qnum++; draw();} };
+  };
+  draw();
+  bd.addEventListener('click', e=>{ if(e.target===bd) bd.remove(); });
+}
+
+function startExam(year, mode){
+  S = { year, mode, answers:Array(30).fill(null), checked:Array(30).fill(false),
+        marks:Array(30).fill(false), secs:90*60, zoom:100, sheetOpen:false };
+  if(mode==='timed') S.timerId = setInterval(()=>{
+    S.secs--;
+    const t=$('#timer'); if(t){ t.textContent=fmtTime(S.secs); t.classList.toggle('low',S.secs<300); }
+    if(S.secs<=0){ clearInterval(S.timerId); grade(); }
+  },1000);
+  exam();
+}
+
+function ansDone(i){ const a=S.answers[i]; return a!==null && !(Array.isArray(a)&&!a.length); }
+
+function exam(){
+  const d = EXAM_DATA[S.year];
+  const prac = S.mode==='practice';
+  app.innerHTML = `
+    <div class="exambar">
+      <button class="btn ghost" id="quit" style="padding:6px 12px">← ออก</button>
+      ${prac?`<span class="chip">🎯 โหมดฝึก</span>`:`<span class="timer" id="timer">${S.mode==='timed'?fmtTime(S.secs):'∞'}</span>`}
+      <span class="chip">ปี ${S.year} · ${SUBJ_NAME}</span>
+      <button class="btn ghost" id="zoom" style="padding:6px 12px">🔍 ${S.zoom}%</button>
+      <span class="grow"></span>
+      <span class="sub" id="cnt">${prac
+        ? `ถูก ${S.marks.filter(Boolean).length} / ตรวจแล้ว ${S.checked.filter(Boolean).length}`
+        : `ตอบแล้ว <b>${S.answers.filter((_,i)=>ansDone(i)).length}</b>/30`}</span>
+      <button class="btn warn" id="submit">${prac?'จบการฝึก':'ส่งคำตอบ'}</button>
+    </div>
+    <div class="examgrid">
+      <div class="pages" style="--zoom:${S.zoom}%">
+        ${d.pages.map((p,i)=>`<img loading="lazy" src="${p}" alt="หน้าข้อสอบ ${i+1}">`).join('')}
+      </div>
+      <div class="card sheet ${S.sheetOpen?'open':''}" id="sheet">
+        <div class="handle" id="handle"><span>✍️ กระดาษคำตอบ</span><span id="hcnt">${S.answers.filter((_,i)=>ansDone(i)).length}/30</span></div>
+        <h2 style="margin:4px 0 8px; font-size:1.05rem">กระดาษคำตอบ</h2>
+        ${SUBJ_KEY==='sci'?'<p class="sub" style="font-size:.82rem;margin:0 0 6px">⚠️ บางข้อถูกมากกว่า 1 — เลือกให้ครบ</p>':''}
+        <div id="rows">${Array.from({length:30},(_,i)=>rowHTML(i)).join('')}</div>
+      </div>
+    </div>`;
+  $('#quit').onclick = ()=>{ if(confirm('ออกจากการสอบ? คำตอบรอบนี้จะหายไป')) home(); };
+  $('#zoom').onclick = ()=>{ S.zoom = S.zoom===100?140:S.zoom===140?180:100; document.querySelector('.pages').style.setProperty('--zoom',S.zoom+'%'); $('#zoom').textContent=`🔍 ${S.zoom}%`; };
+  $('#submit').onclick = confirmSubmit;
+  const h=$('#handle'); if(h) h.onclick = ()=>{ S.sheetOpen=!S.sheetOpen; $('#sheet').classList.toggle('open',S.sheetOpen); };
+  wireRows();
+}
+
+function rowHTML(i){
+  const prac = S.mode==='practice';
+  const locked = prac && S.checked[i];
+  let inner;
+  if(SUBJ_KEY==='math'){
+    inner = `<input class="numin" inputmode="numeric" maxlength="3" data-i="${i}" value="${S.answers[i]??''}" ${locked?'disabled':''} aria-label="คำตอบข้อ ${i+1}">`;
+  } else {
+    const sel = S.answers[i]||[];
+    inner = [1,2,3,4,5].map(n=>`<button class="ob ${sel.includes(n)?'on':''}" data-i="${i}" data-n="${n}" ${locked?'disabled':''} aria-label="ข้อ ${i+1} ตัวเลือก ${n}">${n}</button>`).join('');
+  }
+  const checkBtn = prac && !locked ? `<button class="btn checkq" data-c="${i}">ตรวจ</button>` : '';
+  const hasExpl = hasSolutions(S.year);
+  const fb = locked ? `<div class="fb">${S.marks[i]
+      ? `<span class="mark ok">✔ ถูกต้อง!</span>`
+      : `<span class="mark bad">✘ เฉลย: ${keyText(EXAM_DATA[S.year].key[i])}</span>`}
+      ${hasExpl?` · <button class="explbtn" data-e="${i+1}">📖 วิธีคิด</button>`:''}</div>` : '';
+  return `<div class="srow ${ansDone(i)?'done':''} ${locked?(S.marks[i]?'right':'wrong'):''}" id="r${i}">
+    <span class="qn">${i+1}</span>${inner}${checkBtn}${fb}
+  </div>`;
+}
+function refreshCounts(){
+  const el=$('#cnt'), h=$('#hcnt');
+  if(S.mode==='practice'){
+    if(el) el.textContent = `ถูก ${S.marks.filter(Boolean).length} / ตรวจแล้ว ${S.checked.filter(Boolean).length}`;
+    if(h) h.textContent = S.checked.filter(Boolean).length+'/30';
+    return;
+  }
+  const c = S.answers.filter((_,i)=>ansDone(i)).length;
+  if(el) el.innerHTML = `ตอบแล้ว <b>${c}</b>/30`;
+  if(h) h.textContent = c+'/30';
+}
+function updateRow(i){
+  const row = document.getElementById('r'+i);
+  row.outerHTML = rowHTML(i);
+  wireRow(document.getElementById('r'+i));
+  refreshCounts();
+}
+function checkOne(i){
+  if(!ansDone(i)){ alert('ตอบข้อ '+(i+1)+' ก่อนแล้วค่อยกดตรวจนะ 😊'); return; }
+  S.checked[i]=true;
+  S.marks[i]=matchKey(EXAM_DATA[S.year].key[i], S.answers[i]);
+  updateRow(i);
+}
+function wireRow(scope){
+  scope.querySelectorAll('.numin').forEach(inp=>{
+    inp.addEventListener('input', ()=>{
+      const i=+inp.dataset.i, v=inp.value.trim();
+      S.answers[i] = v===''?null:parseInt(v,10);
+      document.getElementById('r'+i).classList.toggle('done', ansDone(i));
+      refreshCounts();
+    });
+    inp.addEventListener('keydown', e=>{ if(e.key==='Enter' && S.mode==='practice') checkOne(+inp.dataset.i); });
+  });
+  scope.querySelectorAll('.ob').forEach(b=> b.onclick = ()=>{
+    const i=+b.dataset.i, n=+b.dataset.n;
+    const a = S.answers[i]||[];
+    S.answers[i] = a.includes(n)? a.filter(x=>x!==n) : [...a,n];
+    if(!S.answers[i].length) S.answers[i]=null;
+    b.classList.toggle('on');
+    document.getElementById('r'+i).classList.toggle('done', ansDone(i));
+    refreshCounts();
+  });
+  scope.querySelectorAll('.checkq').forEach(b=> b.onclick = ()=> checkOne(+b.dataset.c));
+  scope.querySelectorAll('.explbtn').forEach(b=> b.onclick = ()=> showExpl(+b.dataset.e));
+}
+function wireRows(){ wireRow(document.getElementById('rows')); }
+
+function confirmSubmit(){
+  const prac = S.mode==='practice';
+  const blank = prac ? S.checked.filter(c=>!c).length : S.answers.filter((_,i)=>!ansDone(i)).length;
+  const bd = document.createElement('div');
+  bd.className='modal-backdrop';
+  bd.innerHTML = `<div class="card modal">
+    <h2>${prac?'จบการฝึก?':'ส่งกระดาษคำตอบ?'}</h2>
+    <p>${prac
+      ? (blank?`ยังไม่ได้ตรวจอีก <b>${blank} ข้อ</b> จบเลยหรือไม่?`:'ตรวจครบ 30 ข้อแล้ว ไปดูสรุปกัน!')
+      : (blank?`ยังไม่ได้ตอบ <b>${blank} ข้อ</b> แน่ใจหรือไม่?`:'ตอบครบ 30 ข้อแล้ว พร้อมส่ง!')}</p>
+    <div class="row" style="justify-content:flex-end">
+      <button class="btn ghost" id="c">ทำต่อ</button><button class="btn warn" id="k">ส่งเลย ✔</button>
+    </div></div>`;
+  document.body.appendChild(bd);
+  bd.querySelector('#c').onclick=()=>bd.remove();
+  bd.querySelector('#k').onclick=()=>{ bd.remove(); clearInterval(S.timerId); grade(); };
+}
+
+function matchKey(alts, ans){
+  if(ans===null) return false;
+  if(SUBJ_KEY==='math') return alts.some(a=> a===ans);
+  const s = ans.slice().sort().join(',');
+  return alts.some(a=> a.slice().sort().join(',')===s);
+}
+function keyText(alts){
+  if(SUBJ_KEY==='math') return alts.join(' หรือ ');
+  return alts.map(a=> a.map(n=>CIRC[n]).join(' ')).join(' หรือ ');
+}
+function ansText(a){
+  if(a===null) return '—';
+  if(SUBJ_KEY==='math') return String(a);
+  return a.slice().sort().map(n=>CIRC[n]).join(' ');
+}
+
+function grade(){
+  const d = EXAM_DATA[S.year];
+  const prac = S.mode==='practice';
+  const marks = d.key.map((alts,i)=> matchKey(alts, S.answers[i]));
+  const score = marks.filter(Boolean).length;
+  if(!prac) store.push({ date:new Date().toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'2-digit'}), year:S.year, score, total:30 });
+  const pct = Math.round(score/30*100);
+  const pdf = `https://www.tedet.or.th/files/tedet${S.year}/answer/Answer_TEDET${S.year}_${PDF_SUBJ}_G5.pdf`;
+  const hasExpl = hasSolutions(S.year);
+  app.innerHTML = `
+    <div class="card scorehero">
+      <div style="font-size:2.8rem">${pct>=80?'🏆':pct>=50?'🎖️':'🌱'}</div>
+      <h1>${prac?'สรุปการฝึก':'ผลสอบจริง'}ปี ${S.year} · ${SUBJ_NAME}</h1>
+      <div class="scorebig">${score} / 30</div>
+      <p class="sub">${pct>=80?'สุดยอด! ระดับหัวแถวของสนามจริงเลย':pct>=50?'ทำได้ดีมาก ลองทบทวนข้อที่พลาดดู':'สนามจริงยากแบบนี้แหละ — ดูวิธีคิดแล้วลองใหม่ได้เลย'}${prac?' (คะแนนโหมดฝึกไม่ถูกบันทึกเป็นสถิติ)':''}</p>
+      <div class="row" style="justify-content:center; margin-top:10px">
+        <a class="btn ghost" href="${pdf}" target="_blank" rel="noopener">⬇️ ไฟล์เฉลย PDF ต้นฉบับ</a>
+      </div>
+    </div>
+    <div class="card" style="margin-top:14px; overflow-x:auto">
+      <h2>ตรวจรายข้อ ${hasExpl?'<span class="sub" style="font-size:.85rem;font-weight:400">— กด 📖 เพื่อดูวิธีคิดของข้อนั้น</span>':''}</h2>
+      <table class="res">
+        <tr><th>ข้อ</th><th>คำตอบของหนู</th><th>เฉลย</th><th>ผล</th>${hasExpl?'<th>วิธีคิด</th>':''}</tr>
+        ${d.key.map((alts,i)=>`<tr>
+          <td>${i+1}</td><td>${ansText(S.answers[i])}</td><td>${keyText(alts)}</td>
+          <td class="mark ${marks[i]?'ok':'bad'}">${marks[i]?'✔':'✘'}</td>
+          ${hasExpl?`<td><button class="explbtn" data-e="${i+1}">📖</button></td>`:''}</tr>`).join('')}
+      </table>
+    </div>
+    <div class="row" style="margin-top:16px; justify-content:center">
+      <button class="btn warn" id="retry">ทำปีนี้ใหม่ 🔁</button>
+      <button class="btn ghost" id="home">เลือกปีอื่น</button>
+    </div>`;
+  document.querySelectorAll('.explbtn').forEach(b=> b.onclick = ()=> showExpl(+b.dataset.e));
+  $('#retry').onclick = ()=> startExam(S.year, S.mode);
+  $('#home').onclick = home;
+  window.scrollTo(0,0);
+}
+
+home();
+</script>

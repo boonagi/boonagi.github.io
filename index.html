@@ -1,0 +1,774 @@
+<title>TEDET Trainer ป.5</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mitr:wght@500;600&family=Sarabun:ital,wght@0,400;0,500;0,700;1,400&display=swap">
+<style>
+  :root{
+    --paper:#F6F8FC; --grid:#E7ECF6; --card:#FFFFFF; --line:#D9E1F0;
+    --ink:#22304A; --muted:#5D6B85;
+    --math:#3B5BDB; --math-soft:#E8ECFB; --sci:#0CA678; --sci-soft:#E3F7F0;
+    --accent:#E8590C; --ok:#2B8A3E; --ok-soft:#E6F6EA; --bad:#C92A2A; --bad-soft:#FDEBEB;
+    --flag:#F59E0B; --shadow:0 2px 10px rgba(34,48,74,.08);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#0F1522; --grid:#1A2335; --card:#182136; --line:#283552;
+      --ink:#E8EDF7; --muted:#96A3BE;
+      --math:#8CA1FF; --math-soft:#232D4E; --sci:#3BD9A5; --sci-soft:#123B31;
+      --accent:#FFA94D; --ok:#69DB7C; --ok-soft:#15301C; --bad:#FF8787; --bad-soft:#3A1B1B;
+      --flag:#FCC419; --shadow:0 2px 10px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#0F1522; --grid:#1A2335; --card:#182136; --line:#283552;
+    --ink:#E8EDF7; --muted:#96A3BE;
+    --math:#8CA1FF; --math-soft:#232D4E; --sci:#3BD9A5; --sci-soft:#123B31;
+    --accent:#FFA94D; --ok:#69DB7C; --ok-soft:#15301C; --bad:#FF8787; --bad-soft:#3A1B1B;
+    --flag:#FCC419; --shadow:0 2px 10px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; color:var(--ink); font-family:'Sarabun',system-ui,sans-serif; font-size:17px; line-height:1.65;
+    background:var(--paper);
+    background-image:linear-gradient(var(--grid) 1px, transparent 1px),linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size:28px 28px;
+    min-height:100vh;
+  }
+  .wrap{max-width:920px; margin:0 auto; padding:18px 16px 64px}
+  h1,h2,h3,.btn,.mode-title,.navnum,.timer{font-family:'Mitr','Sarabun',sans-serif; font-weight:600}
+  h1{font-size:1.7rem; margin:.2em 0; text-wrap:balance}
+  h2{font-size:1.25rem; margin:.4em 0}
+  .sub{color:var(--muted)}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px 20px; box-shadow:var(--shadow)}
+  .btn{
+    display:inline-flex; align-items:center; gap:8px; cursor:pointer; border:none; border-radius:12px;
+    padding:11px 20px; font-size:1.02rem; color:#fff; background:var(--math); transition:transform .08s ease, filter .12s;
+  }
+  .btn:hover{filter:brightness(1.07)} .btn:active{transform:scale(.97)}
+  .btn:focus-visible{outline:3px solid var(--flag); outline-offset:2px}
+  .btn.sci{background:var(--sci)} .btn.warn{background:var(--accent)}
+  .btn.ghost{background:transparent; color:var(--ink); border:2px solid var(--line)}
+  .btn:disabled{opacity:.45; cursor:not-allowed}
+  .row{display:flex; gap:12px; flex-wrap:wrap; align-items:center}
+  .grow{flex:1}
+  .chip{display:inline-block; padding:3px 12px; border-radius:999px; font-size:.85rem; font-weight:700; letter-spacing:.02em}
+  .chip.math{background:var(--math-soft); color:var(--math)}
+  .chip.sci{background:var(--sci-soft); color:var(--sci)}
+  .chip.plain{background:var(--paper); color:var(--muted); border:1px solid var(--line)}
+
+  /* home */
+  .brand{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap}
+  .brand .logo{font-family:'Mitr'; font-size:2rem; font-weight:600; color:var(--math)}
+  .modes{display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:14px; margin-top:14px}
+  .mode{cursor:pointer; border:2px solid var(--line); border-radius:16px; padding:20px; background:var(--card); box-shadow:var(--shadow); transition:transform .1s, border-color .1s}
+  .mode:hover{transform:translateY(-3px)}
+  .mode.m1:hover{border-color:var(--sci)} .mode.m2:hover{border-color:var(--math)}
+  .mode-emoji{font-size:2.2rem}
+  .mode-title{font-size:1.25rem; margin:6px 0 2px}
+
+  /* choices */
+  .choices{display:flex; flex-direction:column; gap:10px; margin-top:14px}
+  .choice{
+    display:flex; gap:12px; align-items:flex-start; text-align:left; width:100%;
+    background:var(--card); border:2px solid var(--line); border-radius:12px; padding:12px 14px;
+    font:inherit; color:var(--ink); cursor:pointer; transition:border-color .1s, background .1s;
+  }
+  .choice:hover{border-color:var(--math)}
+  .choice:focus-visible{outline:3px solid var(--flag); outline-offset:2px}
+  .choice .num{
+    flex:none; width:30px; height:30px; border-radius:50%; border:2px solid var(--muted); color:var(--muted);
+    display:flex; align-items:center; justify-content:center; font-weight:700; font-size:.95rem; margin-top:2px;
+  }
+  .choice.multi .num{border-radius:8px}
+  .choice.sel{border-color:var(--math); background:var(--math-soft)}
+  .choice.sel .num{background:var(--math); border-color:var(--math); color:#fff}
+  .choice.correct{border-color:var(--ok); background:var(--ok-soft)}
+  .choice.correct .num{background:var(--ok); border-color:var(--ok); color:#fff}
+  .choice.wrong{border-color:var(--bad); background:var(--bad-soft)}
+  .choice.wrong .num{background:var(--bad); border-color:var(--bad); color:#fff}
+  .numinput{
+    font:inherit; font-size:1.3rem; font-weight:700; text-align:center; letter-spacing:.1em;
+    width:160px; padding:10px; border-radius:12px; border:2px solid var(--line); background:var(--card); color:var(--ink);
+  }
+  .numinput:focus{outline:none; border-color:var(--math)}
+
+  .qtext{font-size:1.05rem}
+  .qtext table{border-collapse:collapse; margin:10px 0}
+  .qtext td,.qtext th{border:1px solid var(--line); padding:6px 14px; text-align:center}
+  .qtext th{background:var(--paper)}
+  .frac{display:inline-flex; flex-direction:column; text-align:center; vertical-align:middle; line-height:1.1; margin:0 2px; font-variant-numeric:tabular-nums}
+  .frac span:first-child{border-bottom:1.5px solid currentColor; padding:0 3px}
+  .frac span:last-child{padding:0 3px}
+
+  .feedback{border-radius:12px; padding:14px 16px; margin-top:14px}
+  .feedback.good{background:var(--ok-soft); border:2px solid var(--ok)}
+  .feedback.oops{background:var(--bad-soft); border:2px solid var(--bad)}
+  .hintbox{background:var(--paper); border:2px dashed var(--flag); border-radius:12px; padding:12px 16px; margin-top:12px}
+  .expl{margin-top:10px}
+  .expl ol{margin:6px 0 0; padding-left:22px}
+  .expl li{margin-bottom:4px}
+
+  /* exam */
+  .exambar{position:sticky; top:0; z-index:10; background:var(--card); border-bottom:2px solid var(--line); padding:10px 16px; margin:-18px -16px 16px; display:flex; align-items:center; gap:14px; flex-wrap:wrap}
+  .timer{font-size:1.3rem; font-variant-numeric:tabular-nums; color:var(--math)}
+  .timer.low{color:var(--bad); animation:blink 1s infinite}
+  @keyframes blink{50%{opacity:.5}}
+  @media (prefers-reduced-motion: reduce){ .timer.low{animation:none} .mode:hover{transform:none} }
+  .examgrid{display:grid; grid-template-columns:1fr 230px; gap:16px}
+  @media (max-width:760px){ .examgrid{grid-template-columns:1fr} .nav-side{order:-1} }
+  .navgrid{display:grid; grid-template-columns:repeat(auto-fill,minmax(38px,1fr)); gap:6px}
+  .navnum{
+    aspect-ratio:1; border-radius:9px; border:2px solid var(--line); background:var(--card); color:var(--ink);
+    display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:.95rem; position:relative;
+  }
+  .navnum.answered{background:var(--math-soft); border-color:var(--math); color:var(--math)}
+  .navnum.current{border-color:var(--accent); box-shadow:0 0 0 2px var(--accent)}
+  .navnum.flagged::after{content:'⚑'; position:absolute; top:-9px; right:-4px; color:var(--flag); font-size:.85rem}
+  .legend{font-size:.82rem; color:var(--muted); margin-top:10px; display:flex; flex-direction:column; gap:4px}
+  .legend .dot{display:inline-block; width:13px; height:13px; border-radius:4px; border:2px solid var(--line); vertical-align:-2px; margin-right:6px}
+  .legend .dot.a{background:var(--math-soft); border-color:var(--math)}
+
+  /* results */
+  .scorehero{text-align:center; padding:26px}
+  .scorebig{font-family:'Mitr'; font-size:3.2rem; font-weight:600; color:var(--math); line-height:1}
+  .topicbar{height:12px; border-radius:6px; background:var(--paper); border:1px solid var(--line); overflow:hidden}
+  .topicbar i{display:block; height:100%; background:var(--sci)}
+  .toprow{display:grid; grid-template-columns:minmax(120px,180px) 1fr 70px; gap:10px; align-items:center; margin:8px 0; font-size:.95rem}
+  details.rev{border:1px solid var(--line); border-radius:12px; background:var(--card); margin-bottom:10px}
+  details.rev summary{cursor:pointer; padding:12px 16px; display:flex; gap:10px; align-items:center; list-style:none}
+  details.rev summary::-webkit-details-marker{display:none}
+  details.rev .body{padding:0 16px 14px; border-top:1px solid var(--line)}
+  .mark{font-weight:700}
+  .mark.ok{color:var(--ok)} .mark.bad{color:var(--bad)}
+
+  .modal-backdrop{position:fixed; inset:0; background:rgba(15,21,34,.55); display:flex; align-items:center; justify-content:center; z-index:50; padding:16px}
+  .modal{max-width:420px; width:100%}
+  .hist td{padding:4px 10px; font-size:.92rem}
+  .streak{font-family:'Mitr'; color:var(--accent)}
+  .topicchips{display:flex; flex-wrap:wrap; gap:8px; margin:10px 0}
+  .tchip{cursor:pointer; border:2px solid var(--line); background:var(--card); color:var(--ink); border-radius:999px; padding:6px 16px; font:inherit; font-size:.92rem}
+  .tchip.sel{border-color:var(--math); background:var(--math-soft); color:var(--math); font-weight:700}
+  a{color:var(--math)}
+  .foot{margin-top:26px; font-size:.85rem; color:var(--muted); text-align:center}
+</style>
+<div class="wrap" id="app"></div>
+<script>
+"use strict";
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+const app = $('#app');
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+function fr(a,b){ return `<span class="frac"><span>${a}</span><span>${b}</span></span>`; }
+const CIRC = ['①','②','③','④','⑤'];
+const shuffle = a => { a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];} return a; };
+
+/* ---------- คลังข้อสอบ (แนว TEDET ป.5) ----------
+   type: 'mc' เลือก 1 คำตอบ | 'multi' เลือกได้หลายคำตอบ (ต้องครบ) | 'num' เติมตัวเลข (จำนวนนับ ≤ 3 หลัก)
+*/
+const QUESTIONS = [
+/* ============ คณิตศาสตร์ ============ */
+{id:'M1', subject:'math', topic:'เศษส่วน', diff:1, type:'num', answer:13,
+ q:`มีเค้ก 2 กล่อง กล่องละ 12 ชิ้น หลังจากงานเลี้ยง กล่องแรกเหลือเค้ก ${fr(1,3)} ของกล่อง และกล่องที่สองเหลือเค้ก ${fr(3,4)} ของกล่อง<br>จงหาว่ามีเค้กเหลืออยู่ทั้งหมดกี่ชิ้น`,
+ hint:'หา "เศษส่วนของจำนวน" ทีละกล่อง: เศษส่วน × จำนวนชิ้นทั้งกล่อง แล้วค่อยนำมาบวกกัน',
+ expl:`<ol><li>กล่องแรกเหลือ ${fr(1,3)} × 12 = 4 ชิ้น</li><li>กล่องที่สองเหลือ ${fr(3,4)} × 12 = 9 ชิ้น</li><li>รวมเหลือ 4 + 9 = <b>13 ชิ้น</b></li></ol>`},
+
+{id:'M2', subject:'math', topic:'เศษส่วน', diff:2, type:'mc', answer:1,
+ q:`พิจารณาจำนวนต่อไปนี้<br><div style="text-align:center;font-size:1.15rem;margin:8px 0">0.7&nbsp;&nbsp;&nbsp; 1${fr(2,5)}&nbsp;&nbsp;&nbsp; 1.3&nbsp;&nbsp;&nbsp; ${fr(16,10)}&nbsp;&nbsp;&nbsp; 1.9</div>จำนวนที่<b><u>มากกว่า</u></b> 1${fr(1,2)} มีทั้งหมดกี่จำนวน`,
+ choices:['1 จำนวน','2 จำนวน','3 จำนวน','4 จำนวน','5 จำนวน'],
+ hint:'แปลงทุกจำนวนให้เป็นทศนิยมก่อน แล้วเทียบกับ 1.5',
+ expl:`<ol><li>แปลงเป็นทศนิยม: 1${fr(2,5)} = 1.4 และ ${fr(16,10)} = 1.6 ส่วน 1${fr(1,2)} = 1.5</li><li>เทียบกับ 1.5 ทีละจำนวน: 0.7 ✗, 1.4 ✗, 1.3 ✗, 1.6 ✓, 1.9 ✓</li><li>มากกว่า 1.5 อยู่ <b>2 จำนวน</b></li></ol>`},
+
+{id:'M3', subject:'math', topic:'ทศนิยม', diff:2, type:'num', answer:495,
+ q:`เชือกเส้นสีแดงยาว 7.2 เมตร เชือกเส้นสีดำสั้นกว่าเชือกเส้นสีแดง 1.7 เมตร และเชือกเส้นสีน้ำเงินยาวเป็น 0.9 เท่าของเชือกเส้นสีดำ<br>จงหาว่าเชือกเส้นสีน้ำเงินยาวกี่<b><u>เซนติเมตร</u></b>`,
+ hint:'หาความยาวเชือกดำก่อน (ลบ) แล้วคูณด้วย 0.9 — ระวัง! คำถามถามเป็นเซนติเมตร',
+ expl:`<ol><li>เชือกดำยาว 7.2 − 1.7 = 5.5 เมตร</li><li>เชือกน้ำเงินยาว 5.5 × 0.9 = 4.95 เมตร</li><li>แปลงหน่วย: 4.95 เมตร = <b>495 เซนติเมตร</b></li></ol>`},
+
+{id:'M4', subject:'math', topic:'ทศนิยม', diff:2, type:'num', answer:150,
+ q:`พิจารณาจำนวน <span style="font-size:1.2rem;letter-spacing:2px"><b>465.408</b></span><br>ให้ A คือเลขโดดในหลักสิบ และ B คือเลขโดดในหลักส่วนสิบ<br>จงหาว่าค่าของเลขโดดในตำแหน่ง A เป็นกี่เท่าของค่าของเลขโดดในตำแหน่ง B`,
+ hint:'"ค่าของเลขโดด" ต้องคิดตามหลักที่มันอยู่ เช่น เลข 6 ในหลักสิบมีค่า 60',
+ expl:`<ol><li>เลขโดดหลักสิบคือ 6 มีค่า 60</li><li>เลขโดดหลักส่วนสิบคือ 4 มีค่า 0.4</li><li>60 ÷ 0.4 = <b>150 เท่า</b></li></ol>`},
+
+{id:'M5', subject:'math', topic:'เรขาคณิต', diff:1, type:'mc', answer:2,
+ q:`กำหนดขนาดของมุมต่อไปนี้<br>• มุม A เป็นมุมป้าน<br>• มุม B เป็นมุมฉาก<br>• มุม C เป็นมุมแหลม<br>• มุม D เป็นมุมตรง<br>ข้อใดเรียงลำดับขนาดของมุม<b><u>จากน้อยไปมาก</u></b>ได้ถูกต้อง`,
+ choices:['A, B, C, D','B, C, A, D','C, B, A, D','D, B, A, C','C, A, B, D'],
+ hint:'มุมแหลม < 90°, มุมฉาก = 90°, มุมป้าน อยู่ระหว่าง 90°–180°, มุมตรง = 180°',
+ expl:`<ol><li>มุมแหลม (C) เล็กกว่า 90°</li><li>มุมฉาก (B) = 90°</li><li>มุมป้าน (A) อยู่ระหว่าง 90° กับ 180°</li><li>มุมตรง (D) = 180°</li><li>เรียงจากน้อยไปมาก: <b>C, B, A, D</b></li></ol>`},
+
+{id:'M6', subject:'math', topic:'เรขาคณิต', diff:3, type:'num', answer:156,
+ q:`สนามหญ้ารูปสี่เหลี่ยมมุมฉากยาว 25 เมตร กว้าง 10 เมตร ต้องการสร้างทางเดินกว้าง 2 เมตร ล้อมรอบสนามหญ้าด้านนอกทุกด้าน<br>จงหาว่าพื้นที่ทางเดินเท่ากับกี่ตารางเมตร`,
+ hint:'รูปใหญ่ (สนาม + ทางเดิน) จะกว้างขึ้นและยาวขึ้นด้านละ 2 เมตร "ทั้งสองข้าง" — พื้นที่ทางเดิน = พื้นที่รูปใหญ่ − พื้นที่สนาม',
+ expl:`<ol><li>รูปใหญ่ยาว 25 + 2 + 2 = 29 เมตร กว้าง 10 + 2 + 2 = 14 เมตร</li><li>พื้นที่รูปใหญ่ = 29 × 14 = 406 ตารางเมตร</li><li>พื้นที่สนาม = 25 × 10 = 250 ตารางเมตร</li><li>พื้นที่ทางเดิน = 406 − 250 = <b>156 ตารางเมตร</b></li></ol>`},
+
+{id:'M7', subject:'math', topic:'เรขาคณิต', diff:2, type:'num', answer:56,
+ q:`กระดาษรูปสี่เหลี่ยมมุมฉากกว้าง 24 เซนติเมตร ยาว 100 เซนติเมตร เมื่อตัดกระดาษเป็นรูปสี่เหลี่ยมจัตุรัสขนาดใหญ่ที่สุด (ด้านละ 24 เซนติเมตร) ไปเรื่อย ๆ จะได้สี่เหลี่ยมจัตุรัส 4 แผ่น และเหลือกระดาษอีก 1 ชิ้น<br>จงหาว่ากระดาษชิ้นที่เหลือมีความยาวรอบรูปกี่เซนติเมตร`,
+ hint:'ตัดจัตุรัส 4 แผ่นใช้ความยาวไป 24 × 4 = 96 ซม. — ชิ้นที่เหลือกว้างเท่าไร ยาวเท่าไร?',
+ expl:`<ol><li>ตัดจัตุรัสด้านละ 24 ซม. จำนวน 4 แผ่น ใช้ความยาว 96 ซม.</li><li>เหลือกระดาษกว้าง 24 ซม. ยาว 100 − 96 = 4 ซม.</li><li>ความยาวรอบรูป = 2 × (24 + 4) = <b>56 เซนติเมตร</b></li></ol>`},
+
+{id:'M8', subject:'math', topic:'โจทย์ปัญหา', diff:3, type:'num', answer:165,
+ q:`ต้นกล้าต้นหนึ่งเดิมสูง 100 เซนติเมตร ความสูงที่เพิ่มขึ้นทุกสิ้นเดือนเป็นดังนี้<br>• สิ้นเดือนแรก สูงเพิ่มขึ้น ${fr(1,4)} ของความสูงเดิม<br>• สิ้นเดือนที่สอง สูงเพิ่มขึ้น ${fr(1,5)} ของความสูงเดือนก่อนหน้า<br>• สิ้นเดือนที่สาม สูงเพิ่มขึ้น ${fr(1,10)} ของความสูงเดือนก่อนหน้า<br>จงหาว่าเมื่อสิ้นเดือนที่สาม ต้นกล้าสูงกี่เซนติเมตร`,
+ hint:'คิดทีละเดือน: ความสูงใหม่ = ความสูงเดิม + (เศษส่วน × ความสูงเดิม) แล้วใช้ผลลัพธ์เป็นฐานของเดือนถัดไป',
+ expl:`<ol><li>สิ้นเดือนแรก: 100 + (${fr(1,4)} × 100) = 125 ซม.</li><li>สิ้นเดือนที่สอง: 125 + (${fr(1,5)} × 125) = 150 ซม.</li><li>สิ้นเดือนที่สาม: 150 + (${fr(1,10)} × 150) = <b>165 เซนติเมตร</b></li></ol>`},
+
+{id:'M9', subject:'math', topic:'โจทย์ปัญหา', diff:3, type:'num', answer:10,
+ q:`นักสเก็ตลีลาคนหนึ่งฝึกท่ากระโดดหมุนตัว โดยทำท่าหมุน 2 รอบ กับท่าหมุน 3 รอบ รวมกันทั้งหมด 20 ครั้ง นับจำนวนรอบที่หมุนได้รวมทั้งหมด 50 รอบ<br>จงหาว่านักสเก็ตทำท่าหมุน 3 รอบไปกี่ครั้ง`,
+ hint:'ลองสมมุติว่าทั้ง 20 ครั้งเป็นท่าหมุน 2 รอบหมดเลย จะได้กี่รอบ? รอบที่ขาดหายไปมาจากไหน?',
+ expl:`<ol><li>ถ้าทั้ง 20 ครั้งเป็นท่าหมุน 2 รอบ จะได้ 20 × 2 = 40 รอบ</li><li>แต่จริง ๆ หมุนได้ 50 รอบ ขาดไป 50 − 40 = 10 รอบ</li><li>เปลี่ยนท่าหมุน 2 รอบเป็นท่าหมุน 3 รอบ 1 ครั้ง จะได้รอบเพิ่ม 1 รอบ</li><li>ดังนั้นทำท่าหมุน 3 รอบ = <b>10 ครั้ง</b> (และท่าหมุน 2 รอบอีก 10 ครั้ง)</li></ol>`},
+
+{id:'M10', subject:'math', topic:'โจทย์ปัญหา', diff:3, type:'num', answer:751,
+ q:`มีขวดน้ำ 3 ใบ ความจุของแต่ละใบคือ 1 ลิตร 200 มิลลิลิตร, 1 ลิตร 500 มิลลิลิตร และ 800 มิลลิลิตร เมื่อเติมน้ำลงในขวดเปล่าทั้ง 3 ใบ จนแต่ละใบมีน้ำเป็น ${fr(1,2)} ของความจุขวด<br>ถ้าปริมาณน้ำทั้งหมดที่ต้องเติมเท่ากับ ♥ ลิตร ♣ มิลลิลิตร จงหาค่าของ ♥ + ♣`,
+ hint:'แปลงทุกใบเป็นมิลลิลิตรก่อน (1 ลิตร = 1,000 มล.) รวมความจุแล้วหารครึ่ง',
+ expl:`<ol><li>ความจุรวม = 1,200 + 1,500 + 800 = 3,500 มิลลิลิตร</li><li>เติมครึ่งหนึ่งของแต่ละใบ = ครึ่งหนึ่งของทั้งหมด = 3,500 ÷ 2 = 1,750 มิลลิลิตร</li><li>1,750 มิลลิลิตร = 1 ลิตร 750 มิลลิลิตร ดังนั้น ♥ = 1, ♣ = 750</li><li>♥ + ♣ = 1 + 750 = <b>751</b></li></ol>`},
+
+{id:'M11', subject:'math', topic:'ข้อมูลและกราฟ', diff:1, type:'num', answer:7,
+ q:`ตารางแสดงระยะเวลาที่นักเรียนแต่ละคนใช้อ่านหนังสือในวันหยุด<br>
+ <table><tr><th>นักเรียน</th><th>ระยะเวลา</th></tr><tr><td>มิน</td><td>2 ชั่วโมง 20 นาที</td></tr><tr><td>ต้นน้ำ</td><td>1 ชั่วโมง 40 นาที</td></tr><tr><td>ใบบุญ</td><td>3 ชั่วโมง</td></tr></table>
+ เมื่อนำข้อมูลไปเขียนแผนภูมิแท่ง โดยกำหนดให้ 1 ช่องของเส้นแนวตั้งเท่ากับ 20 นาที<br>จงหาว่าแท่งของมินจะสูงกี่ช่อง`,
+ hint:'แปลงเวลาของมินเป็นนาทีก่อน แล้วหารด้วย 20',
+ expl:`<ol><li>มินอ่าน 2 ชั่วโมง 20 นาที = 120 + 20 = 140 นาที</li><li>1 ช่อง = 20 นาที ดังนั้นแท่งสูง 140 ÷ 20 = <b>7 ช่อง</b></li></ol>`},
+
+{id:'M12', subject:'math', topic:'ข้อมูลและกราฟ', diff:2, type:'num', answer:4,
+ q:`ต้องการนำเสนอจำนวนนักท่องเที่ยว 1,240 คน เป็นแผนภูมิรูปภาพ โดยกำหนดสัญลักษณ์<br>• ◙ แทนจำนวน 500 คน<br>• □ แทนจำนวน 100 คน<br>• ■ แทนจำนวน 10 คน<br>ถ้าต้องใช้จำนวนรูป<b><u>น้อยที่สุด</u></b> จงหาว่าต้องใช้ ■ ทั้งหมดกี่รูป`,
+ hint:'ใช้สัญลักษณ์ค่ามากให้เต็มที่ก่อน: 1,240 มี 500 ได้กี่ตัว เหลือเท่าไร?',
+ expl:`<ol><li>ใช้ ◙ (500) ได้ 2 รูป = 1,000 คน เหลือ 240 คน</li><li>ใช้ □ (100) ได้ 2 รูป = 200 คน เหลือ 40 คน</li><li>ใช้ ■ (10) แทน 40 คน = <b>4 รูป</b></li></ol>`},
+
+{id:'M13', subject:'math', topic:'แบบรูปและตรรกะ', diff:3, type:'num', answer:11,
+ q:`จงหาค่าของ<br><div style="text-align:center;margin:8px 0">(1 + ${fr(2,3)}) × (1 + ${fr(2,4)}) × (1 + ${fr(2,5)}) × … × (1 + ${fr(2,10)})</div>`,
+ hint:`เขียนแต่ละวงเล็บเป็นเศษส่วนเดียว: 1 + ${'2/3'} = 5/3, 1 + 2/4 = 6/4, … สังเกตว่าตัวเศษกับตัวส่วนตัดกันเป็นทอด ๆ`,
+ expl:`<ol><li>แต่ละวงเล็บ: ${fr(5,3)} × ${fr(6,4)} × ${fr(7,5)} × ${fr(8,6)} × ${fr(9,7)} × ${fr(10,8)} × ${fr(11,9)} × ${fr(12,10)}</li><li>ตัวเศษ 5–10 ตัดกับตัวส่วน 5–10 หมด เหลือเศษ 11 × 12 และส่วน 3 × 4</li><li>= ${fr('11 × 12','3 × 4')} = ${fr(132,12)} = <b>11</b></li></ol>`},
+
+{id:'M14', subject:'math', topic:'แบบรูปและตรรกะ', diff:2, type:'num', answer:6,
+ q:`ลูกเต๋ามาตรฐานมีผลบวกของแต้มบนหน้าตรงข้ามเท่ากับ 7 นำลูกเต๋า 2 ลูกมาวางซ้อนกันบนโต๊ะ พบว่า<br>• หน้าบนสุดของลูกบนมีแต้ม 2<br>• หน้าที่ประกบกันระหว่างลูกบนกับลูกล่างมีแต้มรวมกันเท่ากับ 6<br>จงหาว่าหน้าล่างสุดของลูกล่าง (ด้านที่ติดโต๊ะ) มีแต้มเท่าใด`,
+ hint:'ไล่จากบนลงล่างทีละหน้า โดยใช้กติกา "หน้าตรงข้ามรวม 7"',
+ expl:`<ol><li>ลูกบน: หน้าบนแต้ม 2 → หน้าล่างของลูกบน = 7 − 2 = 5</li><li>หน้าประกบรวม 6 → หน้าบนของลูกล่าง = 6 − 5 = 1</li><li>ลูกล่าง: หน้าบนแต้ม 1 → หน้าล่างสุด = 7 − 1 = <b>6</b></li></ol>`},
+
+{id:'M15', subject:'math', topic:'แบบรูปและตรรกะ', diff:3, type:'num', answer:0,
+ q:`นำตัวเลข 1, 2, 3 และ 4 ตัวเลขละหนึ่งครั้ง มาสร้างเป็นจำนวนคละ เช่น 1${fr(2,34)}, 12${fr(3,4)}, 43${fr(1,2)}<br>ถ้าจำนวนคละที่มีค่า<b>มากที่สุด</b>เป็น A${fr('B','C')} และจำนวนคละที่มีค่า<b>น้อยที่สุด</b>เป็น D${fr('E','F')} เมื่อ A–F เป็นจำนวนนับที่มี 1 หลัก หรือ 2 หลัก<br>จงหาค่าของ (A + B + C) − (D + E + F)`,
+ hint:'มากที่สุด: จำนวนเต็มหน้าต้องใหญ่สุด (2 หลัก) — น้อยที่สุด: จำนวนเต็มหน้าต้องเล็กสุด แล้วทำเศษส่วนให้เล็กที่สุด (เศษน้อย ส่วนมาก)',
+ expl:`<ol><li>ค่ามากที่สุด: จำนวนเต็มหน้า 2 หลักใหญ่สุดคือ 43 เหลือ 1, 2 ทำเศษส่วนแท้ได้ ${fr(1,2)} → 43${fr(1,2)} ดังนั้น A=43, B=1, C=2</li><li>ค่าน้อยที่สุด: จำนวนเต็มหน้าเล็กสุดคือ 1 เหลือ 2, 3, 4 ทำเศษส่วนให้เล็กสุด = ${fr(2,43)} → 1${fr(2,43)} ดังนั้น D=1, E=2, F=43</li><li>(43+1+2) − (1+2+43) = 46 − 46 = <b>0</b></li></ol>`},
+
+{id:'M16', subject:'math', topic:'ทศนิยม', diff:1, type:'num', answer:360,
+ q:`เสื้อตัวหนึ่งราคาปกติ 480 บาท ห้างจัดโปรโมชันลดราคา 25%<br>จงหาว่าต้องจ่ายเงินซื้อเสื้อตัวนี้กี่บาท`,
+ hint:'ลด 25% = ลดหนึ่งในสี่ของราคา หาส่วนลดก่อนแล้วค่อยลบ',
+ expl:`<ol><li>ส่วนลด = 25% ของ 480 = ${fr(25,100)} × 480 = 120 บาท</li><li>ต้องจ่าย 480 − 120 = <b>360 บาท</b></li></ol>`},
+
+{id:'M17', subject:'math', topic:'แบบรูปและตรรกะ', diff:2, type:'num', answer:127,
+ q:`พิจารณาแบบรูปของจำนวนต่อไปนี้<br><div style="text-align:center;font-size:1.15rem;margin:8px 0">3, 7, 15, 31, 63, …</div>จงหาจำนวนถัดไปของแบบรูปนี้`,
+ hint:'ลองดูว่าจากจำนวนหนึ่งไปอีกจำนวนหนึ่ง คูณหรือบวกด้วยอะไร (อาจทำสองอย่างพร้อมกัน)',
+ expl:`<ol><li>สังเกต: 3×2+1 = 7, 7×2+1 = 15, 15×2+1 = 31, 31×2+1 = 63</li><li>กติกาคือ "คูณ 2 แล้วบวก 1"</li><li>จำนวนถัดไป = 63 × 2 + 1 = <b>127</b></li></ol>`},
+
+{id:'M18', subject:'math', topic:'โจทย์ปัญหา', diff:1, type:'num', answer:192,
+ q:`แม่ค้าขายส้ม 5 กิโลกรัม ราคา 120 บาท ถ้าคุณแม่ต้องการซื้อส้ม 8 กิโลกรัม<br>จงหาว่าต้องจ่ายเงินกี่บาท`,
+ hint:'หาราคาส้ม 1 กิโลกรัมก่อน (บัญญัติไตรยางศ์)',
+ expl:`<ol><li>ส้ม 1 กิโลกรัม ราคา 120 ÷ 5 = 24 บาท</li><li>ส้ม 8 กิโลกรัม ราคา 24 × 8 = <b>192 บาท</b></li></ol>`},
+
+{id:'M19', subject:'math', topic:'เรขาคณิต', diff:2, type:'num', answer:70,
+ q:`รูปสามเหลี่ยมหน้าจั่วรูปหนึ่งมีมุมยอดขนาด 40 องศา<br>จงหาว่ามุมที่ฐานแต่ละมุมมีขนาดกี่องศา`,
+ hint:'มุมภายในสามเหลี่ยมรวม 180° และสามเหลี่ยมหน้าจั่วมีมุมฐาน 2 มุมเท่ากัน',
+ expl:`<ol><li>มุมฐานสองมุมรวม = 180 − 40 = 140 องศา</li><li>มุมฐานเท่ากัน 2 มุม แต่ละมุม = 140 ÷ 2 = <b>70 องศา</b></li></ol>`},
+
+{id:'M20', subject:'math', topic:'เรขาคณิต', diff:2, type:'num', answer:120,
+ q:`เวลา 16.00 น. เข็มสั้นชี้ที่เลข 4 และเข็มยาวชี้ที่เลข 12 พอดี<br>จงหาว่ามุมขนาดเล็กที่เกิดจากเข็มสั้นและเข็มยาวมีขนาดกี่องศา`,
+ hint:'หน้าปัดนาฬิกา 1 รอบ = 360° แบ่งเป็น 12 ช่องใหญ่ ช่องละกี่องศา?',
+ expl:`<ol><li>ตัวเลขบนหน้าปัดแบ่งวงกลมเป็น 12 ช่อง ช่องละ 360 ÷ 12 = 30 องศา</li><li>จากเลข 12 ถึงเลข 4 มี 4 ช่อง</li><li>มุม = 4 × 30 = <b>120 องศา</b></li></ol>`},
+
+/* ============ วิทยาศาสตร์ ============ */
+{id:'S1', subject:'sci', topic:'สิ่งมีชีวิตกับสิ่งแวดล้อม', diff:1, type:'mc', answer:2,
+ q:`ข้อใดเป็นการปรับตัวของสิ่งมีชีวิตเพื่อให้มีชีวิตรอดในสภาพแวดล้อมที่อาศัยอยู่ ได้ถูกต้อง`,
+ choices:['กระต่ายมีหูขนาดใหญ่ เพื่อให้ว่ายน้ำได้เร็ว','หมีขั้วโลกมีขนสีขาวและหนา เพื่อพรางตัวและป้องกันความหนาว','ต้นกระบองเพชรมีใบเป็นหนาม เพื่อดึงดูดแมลงมาผสมเกสร','วาฬมีชั้นไขมันหนา เพื่อให้ได้ยินเสียงใต้น้ำชัดขึ้น','ผักตบชวามีก้านใบพองมีอากาศ เพื่อป้องกันแมลงกัดกิน'],
+ hint:'จับคู่ "ลักษณะ" กับ "ประโยชน์" ให้สมเหตุสมผล — ตัวเลือกผิดมักจับคู่ประโยชน์แบบผิดฝาผิดตัว',
+ expl:`<ol><li>หมีขั้วโลกอยู่ในที่หนาวจัดและมีหิมะขาว ขนสีขาวช่วยพรางตัว ขนหนาช่วยกันหนาว ✓</li><li>ข้ออื่นจับคู่ผิด: หูใหญ่ของกระต่ายช่วยฟังเสียงและระบายความร้อน, หนามกระบองเพชรช่วย<b>ลดการคายน้ำ</b>, ไขมันวาฬช่วยกันหนาว, ก้านพองของผักตบชวาช่วย<b>ลอยน้ำ</b></li></ol>`},
+
+{id:'S2', subject:'sci', topic:'พืชและสัตว์', diff:2, type:'mc', answer:3,
+ q:`เกษตรกรต้องการขยายพันธุ์พืช 3 ชนิด คือ มะนาว กล้วย และข้าวโพด<br>ข้อใดเป็นวิธีขยายพันธุ์พืชทั้ง 3 ชนิด ที่ได้ผลผลิตเร็ว ตรงตามพันธุ์เดิม และเหมาะสมที่สุด`,
+ choices:['มะนาว: เพาะเมล็ด | กล้วย: เพาะเมล็ด | ข้าวโพด: เพาะเมล็ด','มะนาว: ปักชำ | กล้วย: เพาะเมล็ด | ข้าวโพด: ตอนกิ่ง','มะนาว: ตอนกิ่ง | กล้วย: แยกหน่อ | ข้าวโพด: เพาะเมล็ด','มะนาว: แยกหน่อ | กล้วย: ตอนกิ่ง | ข้าวโพด: ปักชำ','มะนาว: ตอนกิ่ง | กล้วย: แยกหน่อ | ข้าวโพด: เพาะเลี้ยงเนื้อเยื่อ'],
+ hint:'กล้วยแทบไม่มีเมล็ด — ธรรมชาติของมันแตกหน่อ ส่วนข้าวโพดเป็นพืชล้มลุกอายุสั้น ปลูกจากเมล็ดง่ายที่สุด',
+ expl:`<ol><li>มะนาวเป็นไม้ยืนต้น การ<b>ตอนกิ่ง</b>ให้ผลเร็วและตรงตามพันธุ์เดิม</li><li>กล้วยขยายพันธุ์ตามธรรมชาติด้วยการ<b>แยกหน่อ</b></li><li>ข้าวโพดเป็นพืชล้มลุก ปลูกจาก<b>เมล็ด</b>สะดวก โตเร็ว และต้นทุนต่ำที่สุด</li></ol>`},
+
+{id:'S3', subject:'sci', topic:'สิ่งมีชีวิตกับสิ่งแวดล้อม', diff:2, type:'multi', answer:[0,1,4],
+ q:`ข้อใดเป็น<b>ลักษณะทางพันธุกรรม</b>ที่ถ่ายทอดจากพ่อแม่ไปสู่ลูกได้`,
+ choices:['สีของนัยน์ตา','การมีลักยิ้ม','รอยแผลเป็นที่แขน','ความสามารถในการขี่จักรยาน','การมีติ่งหู'],
+ hint:'ลักษณะทางพันธุกรรมต้องติดตัวมาแต่กำเนิดผ่านยีน ไม่ใช่สิ่งที่เกิดจากอุบัติเหตุหรือการฝึกฝน',
+ expl:`<ol><li>สีตา ลักยิ้ม และติ่งหู เป็นลักษณะที่กำหนดโดยยีน ถ่ายทอดสู่ลูกได้ ✓</li><li>แผลเป็นเกิดจากอุบัติเหตุ และการขี่จักรยานเกิดจากการฝึกฝน — ไม่ถ่ายทอดทางพันธุกรรม ✗</li></ol>`},
+
+{id:'S4', subject:'sci', topic:'สิ่งมีชีวิตกับสิ่งแวดล้อม', diff:3, type:'multi', answer:[0,1,2],
+ q:`โซ่อาหารในนาข้าวเป็นดังนี้<br><div style="text-align:center;margin:8px 0"><b>ข้าว → ตั๊กแตน → กบ → งู</b></div>ถ้าจำนวนกบลดลงอย่างมากจากการถูกจับไปขาย จะเกิดผลตามข้อใดบ้าง`,
+ choices:['ตั๊กแตนมีจำนวนเพิ่มขึ้น','งูมีอาหารน้อยลง','ต้นข้าวถูกทำลายมากขึ้น','ตั๊กแตนมีจำนวนลดลง','งูมีจำนวนเพิ่มขึ้นทันที'],
+ hint:'กบเป็นทั้ง "ผู้ล่า" ของตั๊กแตน และ "อาหาร" ของงู — คิดผลกระทบทั้งสองทิศทาง',
+ expl:`<ol><li>กบลดลง → ผู้ล่าตั๊กแตนน้อยลง → ตั๊กแตนเพิ่มขึ้น ✓</li><li>กบเป็นอาหารของงู → งูมีอาหารน้อยลง ✓</li><li>ตั๊กแตนที่เพิ่มขึ้นกินข้าวมากขึ้น → ข้าวถูกทำลายมากขึ้น ✓</li></ol>`},
+
+{id:'S5', subject:'sci', topic:'พืชและสัตว์', diff:2, type:'multi', answer:[0,1,2],
+ q:`สัตว์ในข้อใดมีลักษณะของ<b>ตัวอ่อนแตกต่างจากตัวเต็มวัยอย่างมาก</b> (มีการเปลี่ยนแปลงรูปร่างขณะเจริญเติบโต)`,
+ choices:['ผีเสื้อ','กบ','ยุง','ตั๊กแตน','แมว'],
+ hint:'นึกภาพตัวอ่อนของแต่ละชนิด: หนอน, ลูกอ๊อด, ลูกน้ำ … ต่างจากพ่อแม่แค่ไหน?',
+ expl:`<ol><li>ผีเสื้อ: หนอน → ดักแด้ → ผีเสื้อ (ต่างมาก) ✓</li><li>กบ: ลูกอ๊อดมีหาง อยู่ในน้ำ → กบมีขา (ต่างมาก) ✓</li><li>ยุง: ลูกน้ำอยู่ในน้ำ → ยุงบินได้ (ต่างมาก) ✓</li><li>ตั๊กแตนตัวอ่อนคล้ายตัวเต็มวัย (แค่ไม่มีปีก) และลูกแมวเหมือนแมวโต ✗</li></ol>`},
+
+{id:'S6', subject:'sci', topic:'สสารและการเปลี่ยนแปลง', diff:1, type:'mc', answer:2,
+ q:`วางแก้วน้ำเย็นจัดไว้บนโต๊ะสักครู่ พบว่ามีหยดน้ำเล็ก ๆ เกาะอยู่รอบผิวแก้วด้านนอก<br>หยดน้ำนี้เกิดจากกระบวนการใด`,
+ choices:['การระเหยของน้ำในแก้ว','น้ำในแก้วซึมผ่านเนื้อแก้วออกมา','การควบแน่นของไอน้ำในอากาศ','การหลอมเหลวของน้ำแข็งในแก้ว','การระเหิดของน้ำแข็งในแก้ว'],
+ hint:'น้ำนั้นมาจาก "ข้างนอก" แก้ว ไม่ใช่ข้างใน — ในอากาศรอบตัวเรามีอะไรที่มองไม่เห็นอยู่?',
+ expl:`<ol><li>ในอากาศมีไอน้ำ (สถานะแก๊ส) ที่มองไม่เห็น</li><li>เมื่อไอน้ำสัมผัสผิวแก้วที่เย็นจัด จะเสียความร้อนและเปลี่ยนสถานะจากแก๊สเป็นของเหลว</li><li>กระบวนการนี้เรียกว่า <b>การควบแน่น</b> — หลักการเดียวกับการเกิดหยดน้ำค้างตอนเช้า</li></ol>`},
+
+{id:'S7', subject:'sci', topic:'สสารและการเปลี่ยนแปลง', diff:1, type:'multi', answer:[0,1,2],
+ q:`ข้อใดเป็นวิธีที่ช่วยให้น้ำตาลทราย<b>ละลายในน้ำได้เร็วขึ้น</b>`,
+ choices:['ใช้น้ำอุ่นแทนน้ำเย็น','ใช้ช้อนคนสารละลาย','บดน้ำตาลให้เป็นผงละเอียดก่อนใส่','เติมน้ำตาลเพิ่มลงไปอีก','นำแก้วน้ำไปแช่ตู้เย็นก่อน'],
+ hint:'อะไรที่ทำให้เม็ดน้ำตาลสัมผัสน้ำได้มากขึ้นหรือชนกับน้ำเร็วขึ้น จะช่วยเร่งการละลาย',
+ expl:`<ol><li>น้ำอุ่น: อนุภาคเคลื่อนที่เร็วขึ้น ละลายเร็วขึ้น ✓</li><li>การคน: ทำให้น้ำตาลกระจายพบน้ำใหม่ตลอดเวลา ✓</li><li>บดละเอียด: เพิ่มพื้นที่ผิวสัมผัสน้ำ ✓</li><li>เติมน้ำตาลเพิ่มยิ่งละลายช้าลง และความเย็นทำให้ละลายช้าลง ✗</li></ol>`},
+
+{id:'S8', subject:'sci', topic:'สสารและการเปลี่ยนแปลง', diff:2, type:'multi', answer:[0,1,4],
+ q:`ข้อใดเป็น<b>การเปลี่ยนแปลงทางเคมี</b> (เกิดสารใหม่ที่มีสมบัติต่างไปจากเดิม)`,
+ choices:['ตะปูเหล็กเกิดสนิม','การเผากระดาษ','น้ำแข็งละลายเป็นน้ำ','การละลายน้ำตาลในน้ำ','ผลไม้สุกเน่าเสีย'],
+ hint:'ถามตัวเองว่า "ได้สารชนิดใหม่ไหม และเปลี่ยนกลับเป็นแบบเดิมได้ง่ายหรือไม่"',
+ expl:`<ol><li>สนิมเป็นสารใหม่ (สีและสมบัติต่างจากเหล็ก) ✓</li><li>เผากระดาษได้เถ้าและแก๊ส เปลี่ยนกลับไม่ได้ ✓</li><li>ผลไม้เน่ามีสารใหม่ กลิ่นสีเปลี่ยน ✓</li><li>น้ำแข็งละลายเป็นแค่การเปลี่ยนสถานะ และน้ำตาลละลายยังคงเป็นน้ำตาล (ระเหยน้ำก็ได้คืน) — เป็นการเปลี่ยนแปลงทางกายภาพ ✗</li></ol>`},
+
+{id:'S9', subject:'sci', topic:'แรงและการเคลื่อนที่', diff:1, type:'mc', answer:3,
+ q:`ข้อใดเป็นการ<b>ลด</b>แรงเสียดทาน`,
+ choices:['ทำดอกยางบนพื้นรองเท้ากีฬา','โรยทรายบนถนนลื่น','ทำพื้นทางลาดให้ขรุขระ','หยอดน้ำมันหล่อลื่นที่บานพับประตู','ใส่ถุงมือยางตอนเปิดฝาขวด'],
+ hint:'แรงเสียดทานมากช่วย "ยึดเกาะ" แรงเสียดทานน้อยช่วยให้ "ลื่น" — ข้อไหนต้องการให้ลื่นขึ้น?',
+ expl:`<ol><li>น้ำมันหล่อลื่นทำให้ผิวสัมผัสลื่นขึ้น บานพับหมุนง่าย เสียงไม่ดัง — คือการ<b>ลด</b>แรงเสียดทาน ✓</li><li>ดอกยาง ทราย พื้นขรุขระ ถุงมือยาง ล้วนเป็นการ<b>เพิ่ม</b>แรงเสียดทานเพื่อกันลื่น ✗</li></ol>`},
+
+{id:'S10', subject:'sci', topic:'แรงและการเคลื่อนที่', diff:2, type:'mc', answer:1,
+ q:`การแข่งขันชักเย่อ ทีม ก ออกแรงดึงไปทางซ้าย 250 นิวตัน ทีม ข ออกแรงดึงไปทางขวา 180 นิวตัน<br>แรงลัพธ์ที่กระทำต่อเชือกเป็นตามข้อใด`,
+ choices:['430 นิวตัน ไปทางซ้าย','70 นิวตัน ไปทางซ้าย','70 นิวตัน ไปทางขวา','430 นิวตัน ไปทางขวา','แรงลัพธ์เป็นศูนย์ เชือกไม่เคลื่อนที่'],
+ hint:'แรงสองแรงดึงสวนทางกัน แรงลัพธ์ = แรงมาก − แรงน้อย และมีทิศตามแรงที่มากกว่า',
+ expl:`<ol><li>แรงดึงสวนทางกัน จึงหักล้างกัน: 250 − 180 = 70 นิวตัน</li><li>ทิศของแรงลัพธ์ไปทางแรงที่มากกว่า คือ<b>ทางซ้าย (ทีม ก)</b></li><li>ดังนั้นเชือกเคลื่อนไปทางทีม ก ด้วยแรงลัพธ์ 70 นิวตัน</li></ol>`},
+
+{id:'S11', subject:'sci', topic:'เสียง', diff:2, type:'multi', answer:[0,1,3],
+ q:`ข้อใดกล่าวถูกต้องเกี่ยวกับ<b>เสียง</b>`,
+ choices:['ดีดสายกีตาร์แรงขึ้น เสียงจะดังขึ้น','สายกีตาร์ที่สั้นและตึง ให้เสียงสูงกว่าสายที่ยาวและหย่อน','เสียงดังคือเสียงสูง เสียงค่อยคือเสียงต่ำ','เสียงเกิดจากการสั่นของวัตถุ','เสียงเดินทางผ่านสุญญากาศได้'],
+ hint:'"ดัง-ค่อย" กับ "สูง-ต่ำ" เป็นคนละเรื่องกัน: อันหนึ่งขึ้นกับแรงสั่น อีกอันขึ้นกับความถี่',
+ expl:`<ol><li>ดีดแรง → การสั่นแรงขึ้น → เสียง<b>ดัง</b>ขึ้น ✓</li><li>สายสั้น/ตึง → สั่นถี่ขึ้น → เสียง<b>สูง</b>ขึ้น ✓</li><li>เสียงทุกเสียงเกิดจากการสั่นของวัตถุ ✓</li><li>ดัง-ค่อย (ความเข้มเสียง) ไม่ใช่เรื่องเดียวกับสูง-ต่ำ (ความถี่) ✗ และเสียงต้องอาศัยตัวกลาง จึงผ่านสุญญากาศไม่ได้ ✗</li></ol>`},
+
+{id:'S12', subject:'sci', topic:'เสียง', diff:1, type:'mc', answer:2,
+ q:`ข้อใดเป็นการปฏิบัติตนที่เหมาะสมที่สุด เมื่อต้องอยู่ในบริเวณที่มีเสียงดังมากเป็นเวลานาน เช่น โรงงาน หรือสนามบิน`,
+ choices:['ตะโกนคุยกับเพื่อนให้ดังกว่าเสียงรบกวน','เปิดเพลงในหูฟังให้ดังขึ้นเพื่อกลบเสียง','สวมที่ครอบหูหรือที่อุดหูป้องกันเสียง','ใช้มือปิดหูเป็นระยะ ๆ','อยู่ให้ชินจนไม่รู้สึกรำคาญ'],
+ hint:'เสียงดังมาก ๆ นาน ๆ ทำลายเซลล์รับเสียงในหูอย่างถาวร — ต้องป้องกันด้วยอุปกรณ์',
+ expl:`<ol><li>เสียงที่ดังเกินไปเป็นเวลานานทำให้เซลล์ประสาทรับเสียงเสื่อมและอาจหูตึงถาวร</li><li>วิธีป้องกันที่ถูกต้องคือใช้อุปกรณ์ลดเสียง เช่น <b>ที่ครอบหู/ที่อุดหู</b> ✓</li><li>การเปิดเพลงดังกลบยิ่งเพิ่มอันตรายต่อหู ✗</li></ol>`},
+
+{id:'S13', subject:'sci', topic:'โลกและอวกาศ', diff:1, type:'mc', answer:1,
+ q:`ข้อใดเรียงลำดับการเกิด<b>ฝน</b>ในวัฏจักรน้ำได้ถูกต้อง`,
+ choices:['ควบแน่น → ระเหย → เกิดเมฆ → ตกเป็นฝน','ระเหย → ควบแน่นเป็นละอองน้ำ → รวมตัวเป็นเมฆ → ตกเป็นฝน','เกิดเมฆ → ระเหย → ควบแน่น → ตกเป็นฝน','ตกเป็นฝน → ระเหย → ควบแน่น → เกิดเมฆ','ระเหย → เกิดเมฆ → ควบแน่น → ระเหิด'],
+ hint:'เริ่มจากน้ำในแหล่งน้ำโดนแดด… กลายเป็นอะไร ลอยขึ้นไปแล้วเจออากาศเย็นเกิดอะไรขึ้น?',
+ expl:`<ol><li>น้ำ<b>ระเหย</b>กลายเป็นไอน้ำลอยขึ้นสูง</li><li>อากาศเบื้องบนเย็น ไอน้ำ<b>ควบแน่น</b>เป็นละอองน้ำเล็ก ๆ</li><li>ละอองน้ำรวมตัวกันเป็น<b>เมฆ</b> เมื่อหนักพอจึง<b>ตกเป็นฝน</b></li></ol>`},
+
+{id:'S14', subject:'sci', topic:'โลกและอวกาศ', diff:2, type:'mc', answer:0,
+ q:`ข้อใดกล่าวถูกต้องเกี่ยวกับ<b>ดาวฤกษ์</b>และ<b>ดาวเคราะห์</b>`,
+ choices:['ดวงอาทิตย์เป็นดาวฤกษ์ เพราะมีแสงสว่างในตัวเอง','โลกเป็นดาวฤกษ์ เพราะมองเห็นได้ชัดเจน','ดาวเคราะห์ทุกดวงมีแสงสว่างในตัวเอง','ดาวฤกษ์คือดาวที่โคจรรอบดาวเคราะห์','ดวงจันทร์เป็นดาวฤกษ์ เพราะส่องสว่างตอนกลางคืน'],
+ hint:'จุดต่างสำคัญ: ดาวฤกษ์ "ผลิตแสงเอง" ดาวเคราะห์และดวงจันทร์ "สะท้อนแสง"',
+ expl:`<ol><li>ดาวฤกษ์มีแสงสว่างในตัวเอง — ดวงอาทิตย์คือดาวฤกษ์ที่อยู่ใกล้โลกที่สุด ✓</li><li>โลกเป็นดาวเคราะห์ และดวงจันทร์เป็นบริวารของโลก ทั้งคู่เพียง<b>สะท้อน</b>แสงอาทิตย์ ✗</li><li>ดาวเคราะห์โคจรรอบดาวฤกษ์ ไม่ใช่กลับกัน ✗</li></ol>`},
+
+{id:'S15', subject:'sci', topic:'โลกและอวกาศ', diff:1, type:'multi', answer:[0,1,3],
+ q:`น้ำจืดที่ใช้ได้จริงมีอยู่น้อยมากเมื่อเทียบกับน้ำทั้งหมดบนโลก ข้อใดเป็นการ<b>ใช้น้ำอย่างประหยัดและรู้คุณค่า</b>`,
+ choices:['ปิดก๊อกน้ำระหว่างแปรงฟัน','นำน้ำซาวข้าวหรือน้ำล้างผักไปรดต้นไม้','เปิดน้ำทิ้งไว้ให้เย็นก่อนอาบ','รีบซ่อมก๊อกน้ำที่รั่วซึมทันที','ล้างรถด้วยสายยางฉีดทุกวัน'],
+ hint:'มองหาข้อที่ "ลดการใช้" หรือ "ใช้ซ้ำ" — ข้อที่ปล่อยน้ำไหลทิ้งคือคำตอบที่ผิด',
+ expl:`<ol><li>ปิดก๊อกระหว่างแปรงฟัน ลดน้ำไหลทิ้งได้หลายลิตรต่อครั้ง ✓</li><li>น้ำซาวข้าวรดต้นไม้ = ใช้น้ำซ้ำให้เกิดประโยชน์ ✓</li><li>ก๊อกรั่วหยดทั้งวันสูญน้ำมหาศาล ต้องรีบซ่อม ✓</li><li>เปิดน้ำทิ้งไว้และล้างรถด้วยสายยางทุกวัน เป็นการใช้น้ำสิ้นเปลือง ✗</li></ol>`},
+
+{id:'S16', subject:'sci', topic:'ทักษะกระบวนการทางวิทยาศาสตร์', diff:2, type:'mc', answer:2,
+ q:`นักเรียนคนหนึ่งปลูกถั่วเขียวในกระถาง 2 ใบ ที่มีดินชนิดเดียวกัน ปริมาณเท่ากัน รดน้ำเท่ากันทุกวัน โดยวางกระถางใบแรกไว้กลางแดด และวางกระถางใบที่สองไว้ในกล่องทึบแสง<br>การทดลองนี้ต้องการศึกษาสิ่งใด`,
+ choices:['ชนิดของดินมีผลต่อการเจริญเติบโตหรือไม่','ปริมาณน้ำมีผลต่อการเจริญเติบโตหรือไม่','แสงแดดมีผลต่อการเจริญเติบโตหรือไม่','ขนาดกระถางมีผลต่อการเจริญเติบโตหรือไม่','อุณหภูมิมีผลต่อการงอกของเมล็ดหรือไม่'],
+ hint:'สังเกตว่าอะไรที่ผู้ทดลอง "จัดให้ต่างกัน" ระหว่างสองกระถาง — สิ่งนั้นคือตัวแปรที่ต้องการศึกษา',
+ expl:`<ol><li>สิ่งที่ต่างกันเพียงอย่างเดียวคือ <b>แสง</b> (กลางแดด vs กล่องทึบ) — คือตัวแปรต้น</li><li>ดิน น้ำ ชนิดพืช จัดให้เหมือนกันหมด — คือตัวแปรควบคุม</li><li>ดังนั้นการทดลองนี้ศึกษาว่า<b>แสงแดดมีผลต่อการเจริญเติบโตหรือไม่</b></li></ol>`},
+
+{id:'S17', subject:'sci', topic:'พืชและสัตว์', diff:2, type:'mc', answer:3,
+ q:`หลังจากดอกไม้ได้รับการถ่ายเรณูและปฏิสนธิแล้ว ส่วนใดของดอกจะเจริญไปเป็น<b>ผล</b>`,
+ choices:['กลีบดอก','อับเรณู','ยอดเกสรเพศเมีย','รังไข่','ก้านชูดอก'],
+ hint:'ภายในส่วนนั้นมีออวุลที่จะกลายเป็นเมล็ด — ผลก็คือ "บ้าน" ที่ห่อหุ้มเมล็ด',
+ expl:`<ol><li>หลังปฏิสนธิ <b>รังไข่</b>จะเจริญไปเป็นผล</li><li>ออวุลที่อยู่ภายในรังไข่จะเจริญไปเป็นเมล็ด</li><li>ส่วนกลีบดอกและเกสรส่วนอื่นมักเหี่ยวและร่วงไป</li></ol>`},
+
+{id:'S18', subject:'sci', topic:'พืชและสัตว์', diff:1, type:'multi', answer:[0,2,4],
+ q:`ข้อใดเป็น<b>สัตว์มีกระดูกสันหลัง</b>`,
+ choices:['ปลาทู','ปูม้า','กบ','หอยทาก','งู'],
+ hint:'ลองนึกว่าตัวไหนมี "โครงกระดูกแกนกลาง" อยู่ในตัว — เปลือกแข็งข้างนอกไม่นับ!',
+ expl:`<ol><li>ปลาทู กบ และงู มีกระดูกสันหลังเป็นแกนของร่างกาย ✓</li><li>ปูม้ามีเปลือกแข็งหุ้ม<b>ภายนอก</b> (สัตว์ไม่มีกระดูกสันหลัง กลุ่มเดียวกับกุ้ง) ✗</li><li>หอยทากมีเปลือกแต่ตัวนิ่ม ไม่มีกระดูก ✗</li></ol>`},
+
+{id:'S19', subject:'sci', topic:'สสารและการเปลี่ยนแปลง', diff:1, type:'mc', answer:1,
+ q:`แช่ช้อนสเตนเลสไว้ในถ้วยน้ำแกงร้อน สักครู่จับปลายช้อนแล้วรู้สึกร้อน<br>ความร้อนส่งมาถึงมือเราด้วยวิธีใด`,
+ choices:['การพาความร้อน','การนำความร้อน','การแผ่รังสีความร้อน','การระเหยของน้ำแกง','การสะท้อนความร้อน'],
+ hint:'ความร้อนเดินทาง "ผ่านเนื้อโลหะ" จากปลายหนึ่งไปอีกปลายหนึ่ง โดยที่ช้อนไม่ได้เคลื่อนที่',
+ expl:`<ol><li>ความร้อนเคลื่อนที่ผ่านเนื้อของแข็ง (โลหะ) จากส่วนที่ร้อนไปส่วนที่เย็นกว่า เรียกว่า <b>การนำความร้อน</b></li><li>โลหะเป็นตัวนำความร้อนที่ดี ปลายช้อนจึงร้อนตาม</li><li>การพาเกิดในของเหลว/แก๊ส ส่วนการแผ่รังสีไม่ต้องอาศัยตัวกลาง (เช่น แดด)</li></ol>`},
+
+{id:'S20', subject:'sci', topic:'โลกและอวกาศ', diff:2, type:'mc', answer:0,
+ q:`ข้อใดอธิบายการเกิด<b>ลม</b>ได้ถูกต้อง`,
+ choices:['อากาศบริเวณที่ร้อนขยายตัวลอยสูงขึ้น อากาศเย็นกว่าจึงเคลื่อนเข้าแทนที่','อากาศเย็นลอยตัวขึ้น อากาศร้อนจมลงแทนที่','โลกหมุนเหวี่ยงให้อากาศกระเด็นเป็นลม','ต้นไม้โบกกิ่งก้านทำให้อากาศเคลื่อนที่','ลมเกิดจากเมฆเคลื่อนที่ชนกัน'],
+ hint:'หลักการเดียวกับควันไฟที่ลอยขึ้น: อากาศร้อนเบากว่าอากาศเย็น',
+ expl:`<ol><li>บริเวณที่รับความร้อนมาก อากาศจะขยายตัว เบาขึ้น และลอยสูงขึ้น</li><li>อากาศเย็นซึ่งหนักกว่าจากบริเวณข้างเคียงจะเคลื่อนเข้ามาแทนที่</li><li>การเคลื่อนที่ของอากาศนี้คือ <b>ลม</b></li></ol>`},
+];
+
+/* ---------- ข้อมูลระบบ ---------- */
+const SUBJ = { math:{name:'คณิตศาสตร์', chip:'math', emoji:'🧮'}, sci:{name:'วิทยาศาสตร์', chip:'sci', emoji:'🔬'} };
+const PRAISE = ['เก่งมาก! 🎉','สุดยอดไปเลย! ⭐','ถูกต้อง! 👏','ยอดเยี่ยม! 🚀','แม่นมาก! 💯'];
+const CHEER = ['ยังไม่ถูก ไม่เป็นไร มาดูวิธีคิดกัน 💪','เกือบแล้ว! ลองดูคำอธิบายนะ 🌱','ผิดได้คือกำลังเรียนรู้ มาดูเฉลยกัน ✨'];
+const store = {
+  get history(){ try{ return JSON.parse(localStorage.getItem('tedet-history')||'[]'); }catch(e){ return []; } },
+  push(r){ const h=this.history; h.unshift(r); localStorage.setItem('tedet-history', JSON.stringify(h.slice(0,20))); }
+};
+let S = {}; // session state
+
+/* ---------- self-check ข้อมูลข้อสอบ ---------- */
+QUESTIONS.forEach(q=>{
+  const bad = m => console.error('ข้อมูลข้อสอบผิด:', q.id, m);
+  if(q.type==='mc' && !(q.choices && q.answer>=0 && q.answer<q.choices.length)) bad('mc answer out of range');
+  if(q.type==='multi' && !(Array.isArray(q.answer) && q.answer.every(i=>i>=0&&i<q.choices.length))) bad('multi answer out of range');
+  if(q.type==='num' && !(Number.isInteger(q.answer) && q.answer>=0 && q.answer<=999)) bad('num answer must be 0-999');
+});
+
+/* ---------- หน้าหลัก ---------- */
+function home(){
+  const h = store.history;
+  const histRows = h.slice(0,5).map(r=>`<tr><td>${r.date}</td><td><span class="chip ${r.subj==='sci'?'sci':'math'}">${r.subjName}</span></td><td>${r.mode}</td><td><b>${r.score}/${r.total}</b></td></tr>`).join('');
+  app.innerHTML = `
+    <header class="brand"><span class="logo">TEDET Trainer</span><span class="chip plain">ป.5 · คณิต + วิทย์</span></header>
+    <p class="sub">ฝึกทำข้อสอบแนว TEDET ตามโครงสร้างข้อสอบจริง — คณิต 30 ข้อ 90 นาที (ปรนัย + เติมตัวเลข) และวิทย์แบบ "เลือกได้มากกว่า 1 คำตอบ"</p>
+    <div class="modes">
+      <div class="mode m1" role="button" tabindex="0" data-go="practice">
+        <div class="mode-emoji">🎯</div>
+        <div class="mode-title">โหมดฝึกฝน</div>
+        <div class="sub">ทำทีละข้อ มีคำใบ้ ตรวจทันที พร้อมเฉลยละเอียดทีละขั้น เลือกหัวข้อที่อยากฝึกได้</div>
+      </div>
+      <div class="mode m2" role="button" tabindex="0" data-go="mock">
+        <div class="mode-emoji">⏱️</div>
+        <div class="mode-title">โหมดสอบเสมือนจริง</div>
+        <div class="sub">จับเวลา มีผังข้อสอบ ปักธงข้อที่ไม่แน่ใจ ส่งกระดาษคำตอบแล้วดูสรุปคะแนนรายหัวข้อ</div>
+      </div>
+    </div>
+    ${h.length?`<div class="card" style="margin-top:16px"><h2>ผลสอบล่าสุด 📊</h2><table class="hist">${histRows}</table></div>`:''}
+    <div class="card" style="margin-top:16px">
+      <h2>ห้องสอบข้อสอบจริงย้อนหลัง 📚</h2>
+      <p class="sub" style="margin:4px 0 10px">ทำข้อสอบจริงทุกปี (2557–2568) ในเว็บได้เลย — จับเวลา 90 นาที ตรวจให้อัตโนมัติ พร้อมลิงก์เฉลยวิธีคิดฉบับจริง</p>
+      <div class="row">
+        <a class="btn" id="lnkMath" href="exam-math.html" target="_blank" rel="noopener">📐 ห้องสอบคณิตศาสตร์</a>
+        <a class="btn sci" id="lnkSci" href="exam-sci.html" target="_blank" rel="noopener">🔬 ห้องสอบวิทยาศาสตร์</a>
+      </div>
+    </div>
+    <p class="foot">สร้างเพื่อการฝึกฝนส่วนตัว · แนวข้อสอบอ้างอิงโครงสร้างจากโครงการ TEDET</p>`;
+  // บน claude.ai เปิดห้องสอบเป็น artifact แยก — ที่อื่น (GitHub Pages / เปิดไฟล์ในเครื่อง) ใช้ไฟล์ข้างกัน
+  if(location.hostname==='claude.ai'){
+    $('#lnkMath').href = 'https://claude.ai/code/artifact/7618e4bc-6f96-42a4-aec0-5375569020a1';
+    $('#lnkSci').href  = 'https://claude.ai/code/artifact/39a9fe77-b71e-401d-bdfe-04226aac9edd';
+  }
+  document.querySelectorAll('[data-go]').forEach(el=>{
+    const go = ()=> el.dataset.go==='practice' ? practiceSetup() : mockSetup();
+    el.addEventListener('click', go);
+    el.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){e.preventDefault(); go();} });
+  });
+}
+
+/* ---------- ตั้งค่าโหมดฝึกฝน ---------- */
+function practiceSetup(){
+  S = { subj:'math', topic:'ทั้งหมด' };
+  const draw = ()=>{
+    const topics = ['ทั้งหมด', ...new Set(QUESTIONS.filter(q=>q.subject===S.subj).map(q=>q.topic))];
+    app.innerHTML = `
+      <button class="btn ghost" id="back">← กลับ</button>
+      <h1>🎯 โหมดฝึกฝน</h1>
+      <div class="card">
+        <h2>เลือกวิชา</h2>
+        <div class="row">
+          <button class="btn ${S.subj==='math'?'':'ghost'}" id="pm">🧮 คณิตศาสตร์</button>
+          <button class="btn ${S.subj==='sci'?'sci':'ghost'}" id="ps">🔬 วิทยาศาสตร์</button>
+        </div>
+        <h2 style="margin-top:18px">เลือกหัวข้อ</h2>
+        <div class="topicchips">${topics.map(t=>`<button class="tchip ${S.topic===t?'sel':''}" data-t="${t}">${t}</button>`).join('')}</div>
+        <button class="btn warn" id="start" style="margin-top:10px">เริ่มฝึกเลย! 🚀</button>
+      </div>`;
+    $('#back').onclick = home;
+    $('#pm').onclick = ()=>{ S.subj='math'; S.topic='ทั้งหมด'; draw(); };
+    $('#ps').onclick = ()=>{ S.subj='sci'; S.topic='ทั้งหมด'; draw(); };
+    document.querySelectorAll('.tchip').forEach(b=> b.onclick = ()=>{ S.topic=b.dataset.t; draw(); });
+    $('#start').onclick = ()=>{
+      let pool = QUESTIONS.filter(q=>q.subject===S.subj && (S.topic==='ทั้งหมด'||q.topic===S.topic));
+      S.queue = shuffle(pool); S.idx=0; S.right=0; S.streak=0; practiceQ();
+    };
+  };
+  draw();
+}
+
+/* ---------- แสดงโจทย์ (ใช้ร่วมทั้งสองโหมด) ---------- */
+function renderChoices(q, sel, locked){
+  if(q.type==='num'){
+    return `<div style="margin-top:14px" class="row">
+      <input class="numinput" id="numans" inputmode="numeric" maxlength="3" placeholder="?" value="${sel??''}" ${locked?'disabled':''} aria-label="คำตอบ">
+      <span class="sub">ตอบเป็นจำนวนนับไม่เกิน 3 หลัก</span></div>`;
+  }
+  const multi = q.type==='multi';
+  return `<div class="choices">${q.choices.map((c,i)=>{
+    const isSel = multi ? (sel||[]).includes(i) : sel===i;
+    return `<button class="choice ${multi?'multi':''} ${isSel?'sel':''}" data-i="${i}" ${locked?'disabled':''}>
+      <span class="num">${multi?(isSel?'✓':''):CIRC[i]}</span><span>${c}</span></button>`;
+  }).join('')}</div>`;
+}
+function readAnswer(q, sel){
+  if(q.type==='num'){ const v=$('#numans').value.trim(); return v===''?null:parseInt(v,10); }
+  return sel;
+}
+function isCorrect(q, ans){
+  if(ans===null||ans===undefined) return false;
+  if(q.type==='num') return ans===q.answer;
+  if(q.type==='multi') return Array.isArray(ans) && ans.length===q.answer.length && q.answer.every(i=>ans.includes(i));
+  return ans===q.answer;
+}
+function answerText(q){
+  if(q.type==='num') return String(q.answer);
+  if(q.type==='multi') return q.answer.map(i=>CIRC[i]).join(' ');
+  return CIRC[q.answer]+' '+q.choices[q.answer];
+}
+function diffStars(d){ return '★'.repeat(d)+'☆'.repeat(3-d); }
+
+/* ---------- โหมดฝึกฝน: ทีละข้อ ---------- */
+function practiceQ(){
+  if(S.idx >= S.queue.length){ return practiceDone(); }
+  const q = S.queue[S.idx];
+  let sel = q.type==='multi' ? [] : null;
+  let showHint=false, checked=false;
+  const draw = ()=>{
+    app.innerHTML = `
+      <div class="row" style="margin-bottom:10px">
+        <button class="btn ghost" id="quit">← จบการฝึก</button>
+        <span class="grow"></span>
+        <span class="chip ${SUBJ[q.subject].chip}">${SUBJ[q.subject].name}</span>
+        <span class="chip plain">${q.topic} · ${diffStars(q.diff)}</span>
+        <span class="streak">🔥 ตอบถูกติดกัน ${S.streak}</span>
+      </div>
+      <div class="card">
+        <div class="row"><h2 style="margin:0">ข้อ ${S.idx+1} / ${S.queue.length}</h2>
+        ${q.type==='multi'?'<span class="chip plain">⚠️ เลือกได้มากกว่า 1 คำตอบ — ต้องเลือกให้ครบ</span>':''}</div>
+        <div class="qtext" style="margin-top:10px">${q.q}</div>
+        ${renderChoices(q, sel, checked)}
+        ${showHint&&!checked?`<div class="hintbox">💡 <b>คำใบ้:</b> ${q.hint}</div>`:''}
+        <div id="fb"></div>
+        <div class="row" style="margin-top:16px">
+          ${!checked?`<button class="btn ghost" id="hint">💡 ขอคำใบ้</button>
+                      <button class="btn warn" id="check">ตรวจคำตอบ ✔</button>`
+                    :`<button class="btn" id="next">ข้อต่อไป →</button>`}
+        </div>
+      </div>`;
+    $('#quit').onclick = practiceDone;
+    if(!checked){
+      document.querySelectorAll('.choice').forEach(b=> b.onclick = ()=>{
+        const i=+b.dataset.i;
+        if(q.type==='multi'){ sel = sel.includes(i)? sel.filter(x=>x!==i) : [...sel,i]; }
+        else sel = i;
+        draw();
+      });
+      $('#hint').onclick = ()=>{ showHint=true; draw(); };
+      $('#check').onclick = ()=>{
+        const ans = readAnswer(q, sel);
+        if(ans===null || (Array.isArray(ans)&&!ans.length)){ alert('เลือกหรือกรอกคำตอบก่อนนะ 😊'); return; }
+        checked=true; sel=ans;
+        const good = isCorrect(q, ans);
+        if(good){ S.right++; S.streak++; } else S.streak=0;
+        draw();
+        // ระบายสีเฉลย
+        if(q.type!=='num'){
+          document.querySelectorAll('.choice').forEach(b=>{
+            const i=+b.dataset.i;
+            const inAns = q.type==='multi'? q.answer.includes(i) : i===q.answer;
+            const inSel = q.type==='multi'? sel.includes(i) : i===sel;
+            if(inAns) b.classList.add('correct');
+            else if(inSel) b.classList.add('wrong');
+          });
+        }
+        $('#fb').innerHTML = `<div class="feedback ${good?'good':'oops'}">
+          <b>${good? PRAISE[Math.floor(Math.random()*PRAISE.length)] : CHEER[Math.floor(Math.random()*CHEER.length)]}</b>
+          ${good?'':`<div style="margin-top:6px">คำตอบที่ถูกต้องคือ <b>${answerText(q)}</b></div>`}
+          <div class="expl"><b>วิธีคิด:</b>${q.expl}</div></div>`;
+        $('#fb').scrollIntoView({behavior:'smooth', block:'nearest'});
+      };
+    } else {
+      $('#next').onclick = ()=>{ S.idx++; practiceQ(); };
+    }
+  };
+  draw();
+}
+function practiceDone(){
+  const done = Math.min(S.idx+(S.queue[S.idx]?0:0), S.queue.length);
+  const attempted = S.idx;
+  app.innerHTML = `
+    <div class="card scorehero">
+      <div style="font-size:2.6rem">${attempted && S.right/Math.max(attempted,1)>=0.8?'🏆':'🌟'}</div>
+      <h1>จบการฝึกรอบนี้</h1>
+      <div class="scorebig">${S.right} / ${attempted}</div>
+      <p class="sub">${attempted===0?'ยังไม่ได้ทำข้อไหนเลย ลองใหม่นะ':S.right===attempted?'เยี่ยมมาก ถูกหมดทุกข้อ!':'ทุกข้อที่ผิดคือบทเรียน — ลองฝึกซ้ำหัวข้อเดิมได้เลย'}</p>
+      <div class="row" style="justify-content:center; margin-top:14px">
+        <button class="btn warn" id="again">ฝึกอีกรอบ 🔁</button>
+        <button class="btn ghost" id="home">กลับหน้าหลัก</button>
+      </div>
+    </div>`;
+  $('#again').onclick = practiceSetup;
+  $('#home').onclick = home;
+}
+
+/* ---------- ตั้งค่าโหมดสอบ ---------- */
+function mockSetup(){
+  S = { subj:'math', len:10 };
+  const draw = ()=>{
+    app.innerHTML = `
+      <button class="btn ghost" id="back">← กลับ</button>
+      <h1>⏱️ โหมดสอบเสมือนจริง</h1>
+      <div class="card">
+        <h2>เลือกวิชา</h2>
+        <div class="row">
+          <button class="btn ${S.subj==='math'?'':'ghost'}" id="pm">🧮 คณิตศาสตร์</button>
+          <button class="btn ${S.subj==='sci'?'sci':'ghost'}" id="ps">🔬 วิทยาศาสตร์</button>
+          <button class="btn ${S.subj==='mix'?'warn':'ghost'}" id="px">🎲 คละสองวิชา</button>
+        </div>
+        <h2 style="margin-top:18px">เลือกความยาว</h2>
+        <div class="row">
+          <button class="btn ${S.len===10?'':'ghost'}" id="l10">ชุดสั้น · 10 ข้อ / 30 นาที</button>
+          <button class="btn ${S.len===20?'':'ghost'}" id="l20">ชุดเต็ม · 20 ข้อ / 60 นาที</button>
+        </div>
+        <p class="sub" style="margin-top:14px">กติกาเหมือนสอบจริง: ทำข้อไหนก่อนก็ได้ ปักธง ⚑ ข้อที่ไม่แน่ใจ หมดเวลาระบบส่งกระดาษคำตอบอัตโนมัติ<br>ข้อวิทยาศาสตร์บางข้อมีคำตอบถูกมากกว่า 1 ข้อ ต้องเลือกให้ครบจึงได้คะแนน (เหมือน TEDET จริง)</p>
+        <button class="btn warn" id="start" style="font-size:1.15rem">เริ่มสอบ! ✍️</button>
+      </div>`;
+    $('#back').onclick = home;
+    $('#pm').onclick=()=>{S.subj='math';draw()}; $('#ps').onclick=()=>{S.subj='sci';draw()}; $('#px').onclick=()=>{S.subj='mix';draw()};
+    $('#l10').onclick=()=>{S.len=10;draw()}; $('#l20').onclick=()=>{S.len=20;draw()};
+    $('#start').onclick = ()=>{
+      let pool = S.subj==='mix' ? QUESTIONS : QUESTIONS.filter(q=>q.subject===S.subj);
+      S.paper = shuffle(pool).slice(0, S.len);
+      S.answers = S.paper.map(q=> q.type==='multi'?[]:null);
+      S.flags = S.paper.map(()=>false);
+      S.cur = 0;
+      S.secs = S.len===10 ? 30*60 : 60*60;
+      S.timerId = setInterval(tick, 1000);
+      examQ();
+    };
+  };
+  draw();
+}
+function tick(){
+  S.secs--;
+  const t = $('#timer');
+  if(t){ t.textContent = fmtTime(S.secs); t.classList.toggle('low', S.secs<300); }
+  if(S.secs<=0){ clearInterval(S.timerId); submitExam(); }
+}
+const fmtTime = s => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+
+/* ---------- หน้าสอบ ---------- */
+function examQ(){
+  const q = S.paper[S.cur];
+  app.innerHTML = `
+    <div class="exambar">
+      <span class="timer ${S.secs<300?'low':''}" id="timer" aria-label="เวลาที่เหลือ">${fmtTime(S.secs)}</span>
+      <span class="chip ${SUBJ[q.subject].chip}">${SUBJ[q.subject].name}</span>
+      <span class="grow"></span>
+      <span class="sub">ตอบแล้ว <b id="ansCount">${S.answers.filter((a,i)=>answered(i)).length}</b>/${S.paper.length}</span>
+      <button class="btn warn" id="submit">ส่งกระดาษคำตอบ</button>
+    </div>
+    <div class="examgrid">
+      <div>
+        <div class="card">
+          <div class="row">
+            <h2 style="margin:0">ข้อ ${S.cur+1}</h2>
+            ${q.type==='multi'?'<span class="chip plain">⚠️ เลือกได้มากกว่า 1 คำตอบ</span>':''}
+            ${q.type==='num'?'<span class="chip plain">เติมตัวเลข</span>':''}
+            <span class="grow"></span>
+            <button class="btn ghost" id="flag" style="padding:7px 14px">${S.flags[S.cur]?'⚑ เลิกปักธง':'⚐ ปักธงไว้ก่อน'}</button>
+          </div>
+          <div class="qtext" style="margin-top:10px">${q.q}</div>
+          ${renderChoices(q, S.answers[S.cur], false)}
+        </div>
+        <div class="row" style="margin-top:14px">
+          <button class="btn ghost" id="prev" ${S.cur===0?'disabled':''}>← ข้อก่อนหน้า</button>
+          <span class="grow"></span>
+          <button class="btn" id="next" ${S.cur===S.paper.length-1?'disabled':''}>ข้อต่อไป →</button>
+        </div>
+      </div>
+      <div class="nav-side">
+        <div class="card">
+          <h2 style="margin-top:0; font-size:1.05rem">ผังข้อสอบ</h2>
+          <div class="navgrid">${S.paper.map((_,i)=>`
+            <button class="navnum ${answered(i)?'answered':''} ${i===S.cur?'current':''} ${S.flags[i]?'flagged':''}" data-i="${i}">${i+1}</button>`).join('')}
+          </div>
+          <div class="legend">
+            <span><span class="dot a"></span>ตอบแล้ว</span>
+            <span><span class="dot"></span>ยังไม่ตอบ</span>
+            <span>⚑ ปักธงไว้ทบทวน</span>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  const saveNum = ()=>{ if(q.type==='num'){ const v=$('#numans').value.trim(); S.answers[S.cur] = v===''?null:parseInt(v,10); } };
+  document.querySelectorAll('.choice').forEach(b=> b.onclick = ()=>{
+    const i=+b.dataset.i;
+    if(q.type==='multi'){ const a=S.answers[S.cur]; S.answers[S.cur] = a.includes(i)? a.filter(x=>x!==i):[...a,i]; }
+    else S.answers[S.cur] = S.answers[S.cur]===i ? null : i;
+    examQ();
+  });
+  if(q.type==='num') $('#numans').addEventListener('input', ()=>{ saveNum(); $('#ansCount').textContent = S.answers.filter((a,i)=>answered(i)).length; refreshNav(); });
+  $('#flag').onclick = ()=>{ S.flags[S.cur]=!S.flags[S.cur]; saveNum(); examQ(); };
+  $('#prev').onclick = ()=>{ saveNum(); S.cur--; examQ(); };
+  $('#next').onclick = ()=>{ saveNum(); S.cur++; examQ(); };
+  document.querySelectorAll('.navnum').forEach(b=> b.onclick = ()=>{ saveNum(); S.cur=+b.dataset.i; examQ(); });
+  $('#submit').onclick = ()=>{ saveNum(); confirmSubmit(); };
+}
+function answered(i){ const a=S.answers[i]; return a!==null && !(Array.isArray(a)&&!a.length); }
+function refreshNav(){ document.querySelectorAll('.navnum').forEach(b=>{ b.classList.toggle('answered', answered(+b.dataset.i)); }); }
+
+function confirmSubmit(){
+  const blank = S.answers.filter((a,i)=>!answered(i)).length;
+  const bd = document.createElement('div');
+  bd.className='modal-backdrop';
+  bd.innerHTML = `<div class="card modal">
+    <h2>ส่งกระดาษคำตอบ?</h2>
+    <p>${blank?`ยังมีข้อที่<b>ไม่ได้ตอบ ${blank} ข้อ</b> แน่ใจหรือไม่?`:'ตอบครบทุกข้อแล้ว พร้อมส่งเลย!'}</p>
+    <div class="row" style="justify-content:flex-end">
+      <button class="btn ghost" id="cancel">กลับไปทำต่อ</button>
+      <button class="btn warn" id="ok">ส่งเลย ✔</button>
+    </div></div>`;
+  document.body.appendChild(bd);
+  bd.querySelector('#cancel').onclick = ()=> bd.remove();
+  bd.querySelector('#ok').onclick = ()=>{ bd.remove(); clearInterval(S.timerId); submitExam(); };
+}
+
+/* ---------- ผลสอบ ---------- */
+function submitExam(){
+  const results = S.paper.map((q,i)=> ({q, ans:S.answers[i], ok:isCorrect(q, S.answers[i])}));
+  const score = results.filter(r=>r.ok).length;
+  const topics = {};
+  results.forEach(r=>{ const t=r.q.topic; topics[t]=topics[t]||{ok:0,n:0}; topics[t].n++; if(r.ok)topics[t].ok++; });
+  const subjName = S.subj==='mix'?'คละสองวิชา':SUBJ[S.subj].name;
+  store.push({ date:new Date().toLocaleDateString('th-TH',{day:'numeric',month:'short'}), subj:S.subj, subjName,
+               mode:`สอบ ${S.paper.length} ข้อ`, score, total:S.paper.length });
+  const pct = Math.round(score/S.paper.length*100);
+  app.innerHTML = `
+    <div class="card scorehero">
+      <div style="font-size:2.8rem">${pct>=80?'🏆':pct>=50?'🎖️':'🌱'}</div>
+      <h1>ผลการสอบ · ${subjName}</h1>
+      <div class="scorebig">${score} / ${S.paper.length}</div>
+      <p class="sub">${pct>=80?'ยอดเยี่ยมมาก ระดับเหรียญรางวัลเลย!':pct>=50?'ทำได้ดี ฝึกเพิ่มอีกนิดจะแม่นขึ้นแน่นอน':'ไม่เป็นไร ทุกสนามสอบคือการซ้อม มาดูเฉลยกัน'}</p>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <h2>คะแนนรายหัวข้อ</h2>
+      ${Object.entries(topics).map(([t,v])=>`
+        <div class="toprow"><span>${t}</span>
+          <div class="topicbar"><i style="width:${v.ok/v.n*100}%"></i></div>
+          <b>${v.ok}/${v.n}</b></div>`).join('')}
+      <p class="sub" style="margin-bottom:0">หัวข้อที่คะแนนน้อย → กลับไปฝึกในโหมดฝึกฝนได้เลย</p>
+    </div>
+    <h2 style="margin-top:20px">เฉลยละเอียดรายข้อ 📝</h2>
+    ${results.map((r,i)=>`
+      <details class="rev">
+        <summary><span class="mark ${r.ok?'ok':'bad'}">${r.ok?'✔':'✘'}</span> <b>ข้อ ${i+1}</b>
+          <span class="chip plain">${r.q.topic}</span>
+          <span class="sub" style="margin-left:auto">${r.ok?'ถูกต้อง':'ดูวิธีคิด →'}</span></summary>
+        <div class="body">
+          <div class="qtext" style="margin-top:12px">${r.q.q}</div>
+          <p style="margin:10px 0 4px">คำตอบของหนู: <b>${fmtAns(r.q, r.ans)}</b> · คำตอบที่ถูก: <b>${answerText(r.q)}</b></p>
+          <div class="expl"><b>วิธีคิด:</b>${r.q.expl}</div>
+        </div>
+      </details>`).join('')}
+    <div class="row" style="margin-top:16px; justify-content:center">
+      <button class="btn warn" id="again">สอบใหม่อีกรอบ 🔁</button>
+      <button class="btn ghost" id="home">กลับหน้าหลัก</button>
+    </div>`;
+  $('#again').onclick = mockSetup;
+  $('#home').onclick = home;
+  window.scrollTo(0,0);
+}
+function fmtAns(q, a){
+  if(a===null||a===undefined||(Array.isArray(a)&&!a.length)) return '— ไม่ได้ตอบ';
+  if(q.type==='num') return String(a);
+  if(q.type==='multi') return a.slice().sort((x,y)=>x-y).map(i=>CIRC[i]).join(' ');
+  return CIRC[a];
+}
+
+home();
+</script>
