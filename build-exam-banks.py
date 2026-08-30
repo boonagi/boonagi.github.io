@@ -44,6 +44,18 @@ def sci_key(v):                      # -> list of alternatives (each a set-list)
         return [sorted([a] if isinstance(a, int) else list(a)) for a in v[1]]
     return [sorted([v] if isinstance(v, int) else list(v))]
 
+def inject_game():
+    """ฝัง game-core.js (ต้นฉบับเดียว) ลงทั้ง index.html และ template — รันซ้ำได้ไม่พัง"""
+    game = open('game-core.js', encoding='utf-8').read().strip()
+    a, b = '/* GAME-CORE:START */', '/* GAME-CORE:END */'
+    for f in ('index.html', 'exam-bank-template.html'):
+        s = open(f, encoding='utf-8').read()
+        i, j = s.index(a), s.index(b)
+        nl = chr(10)
+        open(f, 'w', encoding='utf-8').write(s[:i + len(a)] + nl + game + nl + s[j:])
+        print('inject game-core.js ->', f)
+
+
 def build(subj_key, subj_name, pdf_subj, emoji, title, keys, keyfn, outfile):
     tpl = open('exam-bank-template.html', encoding='utf-8').read()
     data = {}
@@ -69,5 +81,6 @@ def build(subj_key, subj_name, pdf_subj, emoji, title, keys, keyfn, outfile):
     open(outfile, 'w', encoding='utf-8').write(out)
     print(outfile, round(len(out.encode()) / 1e6, 2), 'MB')
 
+inject_game()
 build('math', 'คณิตศาสตร์', 'Math', '🧮', 'ห้องสอบ TEDET คณิต ป.5', MATH, math_key, 'exam-math.html')
 build('sci', 'วิทยาศาสตร์', 'Science', '🔬', 'ห้องสอบ TEDET วิทย์ ป.5', SCI, sci_key, 'exam-sci.html')
