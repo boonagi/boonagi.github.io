@@ -1,3 +1,5 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>__TITLE__</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mitr:wght@500;600&family=Sarabun:ital,wght@0,400;0,500;0,700;1,400&display=swap">
 <style>
@@ -186,6 +188,36 @@ const store = {
 };
 let S = {};
 
+/* ---------- บันทึกความคืบหน้าอัตโนมัติ (กันปิดเบราว์เซอร์แล้วหาย) ---------- */
+const RKEY = ()=> 'tedet-resume-'+SUBJ_KEY+':'+PROF.active;
+function saveS(){
+  if(!S.year) return;
+  try{ localStorage.setItem(RKEY(), JSON.stringify({ v:1, year:S.year, mode:S.mode, secs:S.secs, zoom:S.zoom,
+    answers:S.answers, checked:S.checked, marks:S.marks })); }catch(e){}
+}
+function clearS(){ try{ localStorage.removeItem(RKEY()); }catch(e){} }
+function loadS(){
+  try{
+    const r = JSON.parse(localStorage.getItem(RKEY())||'null');
+    if(!r || !EXAM_DATA[r.year] || !r.answers || r.answers.length!==30) return null;
+    return r;
+  }catch(e){ return null; }
+}
+function resumeExam(){
+  const r = loadS(); if(!r) return;
+  S = Object.assign({ sheetOpen:false, zoom:100 }, r);
+  if(S.mode==='timed') startTimer();
+  exam();
+}
+function startTimer(){
+  S.timerId = setInterval(()=>{
+    S.secs--;
+    if(S.secs%5===0) saveS();
+    const t=$('#timer'); if(t){ t.textContent=fmtTime(S.secs); t.classList.toggle('low',S.secs<300); }
+    if(S.secs<=0){ clearInterval(S.timerId); grade(); }
+  },1000);
+}
+
 /* self-check */
 YEARS.forEach(y=>{ const d=EXAM_DATA[y];
   if(d.key.length!==30) console.error('key length !=30', y, d.key.length);
@@ -194,11 +226,17 @@ YEARS.forEach(y=>{ const d=EXAM_DATA[y];
 
 function home(){
   clearInterval(S.timerId);
+  const RS = loadS();
+  const rsDone = RS ? RS.answers.filter(a=> a!==null && !(Array.isArray(a)&&!a.length)).length : 0;
   app.innerHTML = `
     <div class="row"><h1 style="margin:0">__EMOJI__ ${document.title}</h1><span class="grow"></span>
       <button class="chip" id="profChip" style="border:none;cursor:pointer;font-family:inherit">👤 ${esc(PROF.active)||'เลือกโปรไฟล์'}</button></div>
     <p class="sub">ข้อสอบจริงโครงการ TEDET วิชา${SUBJ_NAME} ป.5 · 30 ข้อ / 90 นาที — เลือกปีที่จะทำได้เลย
     ${SUBJ_KEY==='sci'?'<br><b>กติกาสำคัญ:</b> บางข้อมีคำตอบถูกมากกว่า 1 ข้อ ต้องเลือกให้ครบทุกข้อจึงได้คะแนน':'<br><b>วิธีตอบ:</b> ข้อปรนัยให้กรอกหมายเลขตัวเลือก (1–5) ข้อคำนวณให้กรอกคำตอบเป็นตัวเลข'}</p>
+    ${RS?`<div class="card" style="margin:14px 0; border:2px solid #F59E0B">
+      <h2 style="margin:0 0 6px">⏱️ มีข้อสอบค้างอยู่</h2>
+      <p class="sub" style="margin:0 0 10px">ปี ${RS.year} · ${RS.mode==='practice'?'โหมดฝึก':RS.mode==='timed'?'จับเวลา':'ไม่จับเวลา'} · ตอบแล้ว <b>${rsDone}</b>/30${RS.mode==='timed'?` · เหลือเวลา ${fmtTime(RS.secs)}`:''}</p>
+      <div class="row"><button class="btn warn" id="resume">ทำต่อจากเดิม ▶</button><button class="btn ghost" id="dropResume">ทิ้งแล้วเริ่มใหม่</button></div></div>`:''}
     <div class="years">${YEARS.map(y=>{
       const b = store.best(y);
       return `<div class="ycard" role="button" tabindex="0" data-y="${y}">
@@ -212,6 +250,8 @@ function home(){
     el.addEventListener('click', go);
     el.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){e.preventDefault(); go();} });
   });
+  if(RS){ $('#resume').onclick = resumeExam;
+    $('#dropResume').onclick = ()=>{ if(confirm('ทิ้งข้อสอบที่ค้างไว้?')){ clearS(); home(); } }; }
   $('#profChip').onclick = ()=> showProfiles(true);
   showProfiles(false);
 }
@@ -291,11 +331,7 @@ function solModal(qnum){
 function startExam(year, mode){
   S = { year, mode, answers:Array(30).fill(null), checked:Array(30).fill(false),
         marks:Array(30).fill(false), secs:90*60, zoom:100, sheetOpen:false };
-  if(mode==='timed') S.timerId = setInterval(()=>{
-    S.secs--;
-    const t=$('#timer'); if(t){ t.textContent=fmtTime(S.secs); t.classList.toggle('low',S.secs<300); }
-    if(S.secs<=0){ clearInterval(S.timerId); grade(); }
-  },1000);
+  if(mode==='timed') startTimer();
   exam();
 }
 
@@ -327,11 +363,12 @@ function exam(){
         <div id="rows">${Array.from({length:30},(_,i)=>rowHTML(i)).join('')}</div>
       </div>
     </div>`;
-  $('#quit').onclick = ()=>{ if(confirm('ออกจากการสอบ? คำตอบรอบนี้จะหายไป')) home(); };
+  $('#quit').onclick = ()=>{ if(confirm('ออกไปหน้าแรก? ระบบเก็บคำตอบไว้ให้ กลับมาทำต่อได้')){ saveS(); clearInterval(S.timerId); home(); } };
   $('#zoom').onclick = ()=>{ S.zoom = S.zoom===100?140:S.zoom===140?180:100; document.querySelector('.pages').style.setProperty('--zoom',S.zoom+'%'); $('#zoom').textContent=`🔍 ${S.zoom}%`; };
   $('#submit').onclick = confirmSubmit;
   const h=$('#handle'); if(h) h.onclick = ()=>{ S.sheetOpen=!S.sheetOpen; $('#sheet').classList.toggle('open',S.sheetOpen); };
   wireRows();
+  saveS();
 }
 
 function rowHTML(i){
@@ -359,11 +396,13 @@ function refreshCounts(){
   if(S.mode==='practice'){
     if(el) el.textContent = `ถูก ${S.marks.filter(Boolean).length} / ตรวจแล้ว ${S.checked.filter(Boolean).length}`;
     if(h) h.textContent = S.checked.filter(Boolean).length+'/30';
+    saveS();
     return;
   }
   const c = S.answers.filter((_,i)=>ansDone(i)).length;
   if(el) el.innerHTML = `ตอบแล้ว <b>${c}</b>/30`;
   if(h) h.textContent = c+'/30';
+  saveS();
 }
 function updateRow(i){
   const row = document.getElementById('r'+i);
@@ -436,6 +475,7 @@ function ansText(a){
 }
 
 function grade(){
+  clearS();
   const d = EXAM_DATA[S.year];
   const prac = S.mode==='practice';
   const marks = d.key.map((alts,i)=> matchKey(alts, S.answers[i]));

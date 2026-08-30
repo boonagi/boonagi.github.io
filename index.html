@@ -1,3 +1,5 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TEDET Trainer ป.5</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mitr:wght@500;600&family=Sarabun:ital,wght@0,400;0,500;0,700;1,400&display=swap">
 <style>
@@ -450,7 +452,31 @@ const store = {
 };
 let S = {}; // session state
 
+/* ---------- บันทึกความคืบหน้าอัตโนมัติ (กันปิดเบราว์เซอร์แล้วหาย) ---------- */
+const RKEY = ()=> 'tedet-resume:'+PROF.active;
+function saveS(){
+  if(!S.paper) return;
+  try{ localStorage.setItem(RKEY(), JSON.stringify({ v:1, subj:S.subj, len:S.len, cur:S.cur, secs:S.secs,
+    answers:S.answers, flags:S.flags, paper:S.paper.map(q=>q.id) })); }catch(e){}
+}
+function clearS(){ try{ localStorage.removeItem(RKEY()); }catch(e){} }
+function loadS(){
+  try{
+    const r = JSON.parse(localStorage.getItem(RKEY())||'null');
+    if(!r || !r.paper || !r.paper.length) return null;
+    const paper = r.paper.map(id=> QUESTIONS.find(q=>q.id===id));
+    if(paper.some(q=>!q)) return null;   // คลังข้อสอบเปลี่ยนไป → ทิ้งของเก่า
+    return Object.assign({}, r, {paper});
+  }catch(e){ return null; }
+}
+function resumeExam(){
+  const r = loadS(); if(!r) return;
+  S = r; S.timerId = setInterval(tick, 1000);
+  examQ();
+}
+
 /* ---------- self-check ข้อมูลข้อสอบ ---------- */
+if(new Set(QUESTIONS.map(q=>q.id)).size !== QUESTIONS.length) console.error('id ข้อสอบซ้ำ — ระบบทำต่อ (resume) จะกู้ผิดข้อ');
 QUESTIONS.forEach(q=>{
   const bad = m => console.error('ข้อมูลข้อสอบผิด:', q.id, m);
   if(q.type==='mc' && !(q.choices && q.answer>=0 && q.answer<q.choices.length)) bad('mc answer out of range');
@@ -461,6 +487,8 @@ QUESTIONS.forEach(q=>{
 /* ---------- หน้าหลัก ---------- */
 function home(){
   const h = store.history;
+  const RS = loadS();
+  const rsDone = RS ? RS.answers.filter(a=> a!==null && !(Array.isArray(a)&&!a.length)).length : 0;
   const histRows = h.slice(0,5).map(r=>`<tr><td>${r.date}</td><td><span class="chip ${r.subj==='sci'?'sci':'math'}">${r.subjName}</span></td><td>${r.mode}</td><td><b>${r.score}/${r.total}</b></td></tr>`).join('');
   app.innerHTML = `
     <header class="brand"><span class="logo">TEDET Trainer</span><span class="chip plain">ป.5 · คณิต + วิทย์</span>
@@ -478,6 +506,10 @@ function home(){
         <div class="sub">จับเวลา มีผังข้อสอบ ปักธงข้อที่ไม่แน่ใจ ส่งกระดาษคำตอบแล้วดูสรุปคะแนนรายหัวข้อ</div>
       </div>
     </div>
+    ${RS?`<div class="card" style="margin-top:16px; border:2px solid var(--flag)">
+      <h2>⏱️ มีข้อสอบค้างอยู่</h2>
+      <p class="sub" style="margin:4px 0 10px">${RS.subj==='mix'?'คละสองวิชา':SUBJ[RS.subj].name} · ${RS.paper.length} ข้อ · ตอบแล้ว <b>${rsDone}</b>/${RS.paper.length} · เหลือเวลา ${fmtTime(RS.secs)}</p>
+      <div class="row"><button class="btn warn" id="resume">ทำต่อจากเดิม ▶</button><button class="btn ghost" id="dropResume">ทิ้งแล้วเริ่มใหม่</button></div></div>`:''}
     ${h.length?`<div class="card" style="margin-top:16px"><h2>ผลสอบล่าสุด 📊</h2><table class="hist">${histRows}</table></div>`:''}
     <div class="card" style="margin-top:16px">
       <h2>ห้องสอบข้อสอบจริงย้อนหลัง 📚</h2>
@@ -488,6 +520,8 @@ function home(){
       </div>
     </div>
     <p class="foot">🔒 ความเป็นส่วนตัว: เว็บนี้<b>ไม่มีการเก็บข้อมูลใด ๆ</b> ขึ้นเซิร์ฟเวอร์ — โปรไฟล์และคะแนนทั้งหมดบันทึกอยู่ในเบราว์เซอร์ของคุณเท่านั้น<br>สร้างเพื่อการฝึกฝนส่วนตัว · แนวข้อสอบอ้างอิงโครงสร้างจากโครงการ TEDET · <b>By PartnerX</b></p>`;
+  if(RS){ $('#resume').onclick = resumeExam;
+    $('#dropResume').onclick = ()=>{ if(confirm('ทิ้งข้อสอบที่ค้างไว้?')){ clearS(); home(); } }; }
   $('#profChip').onclick = ()=> showProfiles(true);
   showProfiles(false);   // ครั้งแรก/ยังไม่เลือกคน → เด้งให้เลือกก่อน
   // บน claude.ai เปิดห้องสอบเป็น artifact แยก — ที่อื่น (GitHub Pages / เปิดไฟล์ในเครื่อง) ใช้ไฟล์ข้างกัน
@@ -687,6 +721,7 @@ function mockSetup(){
 }
 function tick(){
   S.secs--;
+  if(S.secs%5===0) saveS();   // เผื่อพิมพ์คำตอบทิ้งไว้แล้วยังไม่กดเปลี่ยนข้อ
   const t = $('#timer');
   if(t){ t.textContent = fmtTime(S.secs); t.classList.toggle('low', S.secs<300); }
   if(S.secs<=0){ clearInterval(S.timerId); submitExam(); }
@@ -695,6 +730,7 @@ const fmtTime = s => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60)
 
 /* ---------- หน้าสอบ ---------- */
 function examQ(){
+  saveS();
   const q = S.paper[S.cur];
   app.innerHTML = `
     <div class="exambar">
@@ -772,6 +808,7 @@ function confirmSubmit(){
 
 /* ---------- ผลสอบ ---------- */
 function submitExam(){
+  clearS();
   const results = S.paper.map((q,i)=> ({q, ans:S.answers[i], ok:isCorrect(q, S.answers[i])}));
   const score = results.filter(r=>r.ok).length;
   const topics = {};
