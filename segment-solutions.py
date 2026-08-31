@@ -90,8 +90,61 @@ def segment(pdf_path):
         strips[q] = [pc for pc in pieces if pc[3] - pc[2] > 6]
     return (doc, strips, layout), found
 
+def segment_zorder(pdf_path):
+    """fallback สำหรับเอกสารที่เรียงข้อแบบแถว (ซ้าย→ขวา→ซ้ายล่าง) เช่น เฉลยคณิต ม.1 ปี 2564:
+    จับ marker ทุกตัวโดยไม่บังคับลำดับ แล้วตัดแต่ละข้อจาก marker ถึง marker ถัดไปในคอลัมน์เดียวกัน
+    (ไม่ตามต่อข้ามคอลัมน์ — เค้าโครงแบบนี้คำอธิบายจบในช่องของตัวเอง)"""
+    import re as _re
+    doc = pymupdf.open(pdf_path)
+    percol = {}          # (page, col) -> [(y, q)]
+    layout = []
+    seen = set()
+    for pno in range(len(doc)):
+        page = doc[pno]
+        cols = page_columns(page)
+        d = page.get_text('dict')
+        colinfo = [None]*len(cols)
+        for ci, (cx0, cx1) in enumerate(cols):
+            ys = []
+            for b in d['blocks']:
+                for l in b.get('lines', []):
+                    txt = ''.join(sp['text'] for sp in l['spans']).strip()
+                    if not txt: continue
+                    x0, y0, x1, y1 = l['bbox']
+                    if not (cx0 <= x0 < cx1): continue
+                    ys.append((y0, y1))
+                    m = _re.match(r'^(\d{1,2})\s*\.(?!\d)', txt)
+                    if m and 1 <= int(m.group(1)) <= 30 and int(m.group(1)) not in seen                          and x0 - cx0 < min(0.3*(cx1-cx0), 90):
+                        seen.add(int(m.group(1)))
+                        percol.setdefault((pno, ci), []).append((y0, int(m.group(1))))
+            if ys: colinfo[ci] = (min(y[0] for y in ys), max(y[1] for y in ys))
+        layout.append((cols, colinfo))
+    if len(seen) < 30: return None, len(seen)
+    # ตัดเต็มความกว้างเป็นแถบแนวนอน: จาก y ของ marker ถึง y ของ marker แถวถัดไปในหน้า
+    # (ข้อที่อยู่เคียงกันคนละคอลัมน์จะเห็นเพื่อนบ้านด้วย — อ่านเหมือนครอปหน้ากระดาษ ยอมรับได้
+    #  และไม่มีทางตัดเนื้อหากว้างเกินคอลัมน์ขาด)
+    perpage = {}
+    for (pno, ci), ms in percol.items():
+        perpage.setdefault(pno, []).extend(ms)
+    fullw = []          # layout เต็มความกว้างสำหรับ export
+    for pno, (cols, colinfo) in enumerate(layout):
+        tops = [c[0] for c in colinfo if c]; bots = [c[1] for c in colinfo if c]
+        fullw.append(([(0, doc[pno].rect.width)], [(min(tops), max(bots)) if tops else None]))
+    strips = {}
+    for pno, ms in perpage.items():
+        ms.sort()
+        bot = fullw[pno][1][0][1] + 4
+        ys = sorted(set(round(y) for y, q in ms))
+        for y, q in ms:
+            nxt = [v for v in ys if v > round(y) + 8]
+            y2 = (nxt[0] - 4) if nxt else bot
+            strips[q] = [(pno, 0, y-4, y2)]
+    return (doc, strips, fullw), 30
+
 def export(pdf_path, outdir, prefix):
     res, found = segment(pdf_path)
+    if res is None:
+        res, found = segment_zorder(pdf_path)
     if res is None: return found, 0
     doc, strips, layout = res
     os.makedirs(outdir, exist_ok=True)

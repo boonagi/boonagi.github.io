@@ -464,6 +464,10 @@ const GRADES = [
     {emoji:'📐', name:'ห้องสอบคณิตศาสตร์', file:'exam-math-g6.html', cls:'', access:'free'},
     {emoji:'🔬', name:'ห้องสอบวิทยาศาสตร์', file:'exam-sci-g6.html', cls:'sci', access:'free'},
   ]},
+  {id:'m1', label:'ม.1', rooms:[
+    {emoji:'📐', name:'ห้องสอบคณิตศาสตร์', file:'exam-math-g7.html', cls:'', access:'free'},
+    {emoji:'🔬', name:'ห้องสอบวิทยาศาสตร์', file:'exam-sci-g7.html', cls:'sci', access:'free'},
+  ]},
 ];
 const curGrade = ()=> localStorage.getItem('tedet-grade') || 'p5';
 const unlocked = r => r.access==='free' ||
