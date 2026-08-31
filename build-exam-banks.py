@@ -36,10 +36,42 @@ SCI = {
  2568:[(1,3,5),3,1,3,1,2,3,3,5,(2,5),2,(1,4),2,A(5,(4,5)),(1,3),4,(3,5),(3,5),(2,4),(3,5),2,3,(4,5),(4,5),(2,3),(1,5),4,4,3,(3,5)],
 }
 
-def math_key(v):                     # -> list of alternatives (numbers)
+# ป.6: None = ข้อยกเลิกตามประกาศ (วัดผล 29 ข้อ)
+MATH6 = {
+ 2557:[100,10,50,3,2,2,98,21,12,2,64,820,33,36,91,30,382,37,169,912,360,120,11,560,94,20,15,931,640,None],
+ 2558:[20,18,576,56,8,207,18,60,480,24,10,200,51,942,120,72,960,29,544,93,36,8,369,954,62,997,28,25,6,50],
+ 2559:[628,13,8,2,9,20,19,18,60,4,7,126,82,21,100,5,6,3,45,20,360,45,5,74,531,17,624,16,200,28],
+ 2560:[5,17,1,6,200,32,1,255,360,14,35,3,5,4,4,5,64,36,160,510,21,4,334,5,28,30,360,876,5,115],
+ 2561:[105,216,11,3,4,900,2,29,5,7,1,690,2,6,624,18,4,600,480,675,182,96,4,288,16,168,684,10,3,24],
+ 2562:[7,4,108,360,5,4,48,10,80,2,22,588,5,3,4,28,1,275,3,7,90,2,8,28,110,42,9,21,3,20],
+ 2563:[2,40,217,300,96,120,45,6,100,8,110,45,7,6,102,140,36,10,175,32,90,15,10,2,12,30,27,101,18,216],
+ 2564:[5,15,12,3,48,72,750,75,39,3,360,10,882,15,60,44,41,4,35,38,85,48,5,48,62,112,54,695,65,213],
+ 2565:[5,5,15,25,4,16,68,132,22,4,44,2,4,4,7,18,45,6,6,12,49,3,374,70,32,3,4,2,42,3],
+ 2566:[2,2,12,3,13,24,130,5,11,21,54,3,2,2,297,181,324,427,35,4,4,203,296,817,1,128,110,9,3,378],
+ 2567:[5,3,75,84,20,12,4,42,70,5,36,72,300,1,60,1,125,144,20,20,126,47,190,25,40,360,255,8,8,44],
+ 2568:[240,4,3,65,180,183,630,1,375,5,1,384,7,8,322,6,76,36,91,27,21,4,640,198,2,5,24,308,4,15],
+}
+SCI6 = {
+ 2557:[5,4,5,3,1,4,1,1,4,5,3,4,5,4,2,3,1,(2, 5),1,5,4,2,5,1,5,2,4,2,5,3],
+ 2558:[3,1,2,4,4,5,2,1,(3, 4),3,5,1,(2, 5),2,5,3,(1, 4),3,4,2,(3, 5),4,3,1,4,5,2,4,4,4],
+ 2559:[4,2,(3, 4),5,5,5,3,4,(1, 5),5,2,2,5,3,5,4,4,2,5,4,2,3,5,3,2,5,(1, 3, 5),2,(2, 4),3],
+ 2560:[3,2,5,4,5,3,1,3,4,5,1,3,(2, 5),(2, 3, 4),(3, 4),4,4,(4, 5),3,(3, 5),2,(1, 5),(1, 2),(2, 5),2,5,4,(3, 4),2,(1, 4)],
+ 2561:[1,(1, 4),2,1,5,2,(2, 5),2,(1, 2),5,3,5,1,2,5,(3, 5),1,5,5,4,1,2,(3, 5),2,(3, 4),None,3,(2, 3, 4, 5),(3, 4),(1, 3, 4)],
+ 2562:[5,4,3,1,2,5,(1, 2),4,3,3,2,3,(2, 3),5,(1, 3, 4),5,3,4,(1, 2, 5),4,(1, 3, 5),2,4,5,(4, 5),2,3,5,1,(1, 3, 4)],
+ 2563:[2,(2, 4),2,(2, 3),5,4,5,2,4,1,4,(2, 3),5,1,3,5,A(2, (2, 5)),2,4,(3, 5),2,5,3,3,(2, 5),5,3,A(1, (1, 4)),(1, 2, 5),2],
+ 2564:[3,3,(2, 4),(2, 4),5,5,4,5,None,3,3,3,5,(2, 5),2,2,3,2,5,3,3,2,2,2,4,(1, 5),4,3,2,4],
+ 2565:[5,2,2,4,(2, 5),5,(2, 5),(2, 5),1,3,(1, 5),3,1,4,(2, 4),2,2,(3, 5),5,(1, 5),3,(3, 4),2,None,3,5,(1, 4),3,1,4],
+ 2566:[2,5,4,2,1,(1, 5),2,(1, 3),(2, 5),2,(3, 4),3,(2, 5),5,1,(1, 3, 4),(3, 4),4,5,2,(2, 3),2,2,4,4,(3, 5),3,2,(2, 4),3],
+ 2567:[(2, 5),3,(2, 4),2,2,(1, 5),4,3,3,(3, 5),2,(4, 5),(1, 2),5,3,4,(3, 5),5,(3, 4),(2, 4),5,2,(1, 3),2,3,5,(1, 5),4,2,3],
+ 2568:[2,2,(4, 5),4,2,5,4,(4, 5),4,(2, 4),2,4,(3, 4),(2, 5),(3, 4),1,(2, 4),1,(1, 3),5,(3, 5),4,(3, 4),4,(1, 3),(3, 4),(2, 4),1,2,5],
+}
+
+def math_key(v):                     # -> list of alternatives (numbers); None = ข้อยกเลิก
+    if v is None: return []
     return v if isinstance(v, list) else [v]
 
 def sci_key(v):                      # -> list of alternatives (each a set-list)
+    if v is None: return []
     if isinstance(v, tuple) and len(v) == 2 and v[0] == 'ALT':
         return [sorted([a] if isinstance(a, int) else list(a)) for a in v[1]]
     return [sorted([v] if isinstance(v, int) else list(v))]
@@ -56,27 +88,33 @@ def inject_game():
         print('inject game-core.js ->', f)
 
 
-def build(subj_key, subj_name, pdf_subj, emoji, title, keys, keyfn, outfile):
+def build(subj_key, subj_name, pdf_subj, emoji, title, keys, keyfn, outfile,
+          glevel='G5', grade_label='ป.5'):
+    sfx = '' if glevel == 'G5' else '_' + glevel        # ชื่อไฟล์ภาพ ป.5 แบบเดิมไม่มี suffix
+    store = subj_key if glevel == 'G5' else subj_key + '-' + glevel.lower()   # ป.5 ใช้กุญแจเดิม ข้อมูลเก่าอยู่ครบ
     tpl = open('exam-bank-template.html', encoding='utf-8').read()
     data = {}
     for y in sorted(keys):
-        pages = sorted(glob.glob(f'exams/webp/{y}_{pdf_subj}_p*.webp'))
+        pages = sorted(glob.glob(f'exams/webp/{y}_{pdf_subj}{sfx}_p*.webp'))
         assert pages, f'no pages {y} {pdf_subj}'
         assert len(keys[y]) == 30, f'key length {y} {pdf_subj} = {len(keys[y])}'
         b64 = lambda p: 'data:image/webp;base64,' + base64.b64encode(open(p, 'rb').read()).decode()
         sol = {}   # วิธีทำรายข้อ ตัดจากเฉลยฉบับจริง (ปี 2557 ไม่มี)
         import re as _re
-        for p in sorted(glob.glob(f'exams/solutions/{y}_{pdf_subj}_q*_*.webp')):
+        for p in sorted(glob.glob(f'exams/solutions/{y}_{pdf_subj}{sfx}_q*_*.webp')):
             q = str(int(_re.search(r'_q(\d+)_', p).group(1)))
             sol.setdefault(q, []).append(b64(p))
+        void = [i + 1 for i, v in enumerate(keys[y]) if v is None]
         data[str(y)] = {
             'pages': [b64(p) for p in pages],
             'sol': sol,
             'key': [keyfn(v) for v in keys[y]],
+            **({'void': void} if void else {}),
         }
     out = (tpl.replace('__TITLE__', title).replace('__SUBJ__', subj_key)
               .replace('__SUBJ_NAME__', subj_name).replace('__PDF_SUBJ__', pdf_subj)
-              .replace('__EMOJI__', emoji)
+              .replace('__EMOJI__', emoji).replace('__GLEVEL__', glevel)
+              .replace('__GRADE_LABEL__', grade_label).replace('__STORE__', store)
               .replace('__DATA__', json.dumps(data, ensure_ascii=False, separators=(',', ':'))))
     open(outfile, 'w', encoding='utf-8').write(out)
     print(outfile, round(len(out.encode()) / 1e6, 2), 'MB')
@@ -84,3 +122,5 @@ def build(subj_key, subj_name, pdf_subj, emoji, title, keys, keyfn, outfile):
 inject_game()
 build('math', 'คณิตศาสตร์', 'Math', '🧮', 'ห้องสอบ TEDET คณิต ป.5', MATH, math_key, 'exam-math.html')
 build('sci', 'วิทยาศาสตร์', 'Science', '🔬', 'ห้องสอบ TEDET วิทย์ ป.5', SCI, sci_key, 'exam-sci.html')
+build('math', 'คณิตศาสตร์', 'Math', '🧮', 'ห้องสอบ TEDET คณิต ป.6', MATH6, math_key, 'exam-math-g6.html', 'G6', 'ป.6')
+build('sci', 'วิทยาศาสตร์', 'Science', '🔬', 'ห้องสอบ TEDET วิทย์ ป.6', SCI6, sci_key, 'exam-sci-g6.html', 'G6', 'ป.6')

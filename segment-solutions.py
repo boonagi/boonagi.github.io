@@ -108,18 +108,20 @@ def export(pdf_path, outdir, prefix):
     return found, n
 
 if __name__ == '__main__':
+    G = sys.argv[1] if len(sys.argv) > 1 else 'G5'      # G5 (ชื่อไฟล์เดิมไม่มี suffix) หรือ G6
+    sfx = '' if G == 'G5' else '_' + G
     report = []
     for y in range(2557, 2569):
         for s in ['Math', 'Science']:
-            pdf = f'exams/{y}/Answer_TEDET{y}_{s}_G5.pdf'
+            pdf = f'exams/{y}/Answer_TEDET{y}_{s}_{G}.pdf'
             d = pymupdf.open(pdf)
             if len(d) < 2:
                 report.append((y, s, 'no-expl', 0)); continue
             # ข้ามหน้าตารางเฉลย (หน้า 1): segment ทั้งเอกสารแต่ marker หน้า 1 คือเลขในตาราง — ตัดหน้า 1 ออกก่อน
             tmp = pymupdf.open()
             tmp.insert_pdf(d, from_page=1, to_page=len(d) - 1)
-            tmpf = f'exams/keys/_tmp_{y}_{s}.pdf'
+            tmpf = f'exams/keys/_tmp_{y}_{s}{sfx}.pdf'
             tmp.save(tmpf)
-            found, n = export(tmpf, 'exams/solutions', f'{y}_{s}')
+            found, n = export(tmpf, 'exams/solutions', f'{y}_{s}{sfx}')
             report.append((y, s, found, n))
     for r in report: print(r)

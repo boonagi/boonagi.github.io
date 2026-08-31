@@ -119,6 +119,10 @@
 const SUBJ_KEY = 'sci';           // 'math' | 'sci'
 const SUBJ_NAME = 'วิทยาศาสตร์';
 const PDF_SUBJ = 'Science';       // Math | Science
+const GLEVEL='G5', GRADE_LABEL='ป.5', STORE_KEY='sci';
+const VOIDS = y => EXAM_DATA[y].void||[];              // ข้อที่ทางการประกาศยกเลิก (วัดผล 29 ข้อ)
+const isVoid = (y,i) => VOIDS(y).includes(i+1);
+const TOT = y => 30 - VOIDS(y).length;
 document.documentElement.style.setProperty('--subj', `var(--${SUBJ_KEY})`);
 document.documentElement.style.setProperty('--subj-soft', `var(--${SUBJ_KEY}-soft)`);
 
@@ -182,14 +186,14 @@ function showProfiles(force){
   draw();
 }
 const store = {
-  get hist(){ try{ return JSON.parse(localStorage.getItem('tedet-real-'+SUBJ_KEY+':'+PROF.active)||'[]'); }catch(e){ return []; } },
-  push(r){ const h=this.hist; h.unshift(r); localStorage.setItem('tedet-real-'+SUBJ_KEY+':'+PROF.active, JSON.stringify(h.slice(0,50))); },
+  get hist(){ try{ return JSON.parse(localStorage.getItem('tedet-real-'+STORE_KEY+':'+PROF.active)||'[]'); }catch(e){ return []; } },
+  push(r){ const h=this.hist; h.unshift(r); localStorage.setItem('tedet-real-'+STORE_KEY+':'+PROF.active, JSON.stringify(h.slice(0,50))); },
   best(y){ const s=this.hist.filter(r=>r.year===y).map(r=>r.score); return s.length?Math.max(...s):null; }
 };
 let S = {};
 
 /* ---------- บันทึกความคืบหน้าอัตโนมัติ (กันปิดเบราว์เซอร์แล้วหาย) ---------- */
-const RKEY = ()=> 'tedet-resume-'+SUBJ_KEY+':'+PROF.active;
+const RKEY = ()=> 'tedet-resume-'+STORE_KEY+':'+PROF.active;
 function saveS(){
   if(!S.year) return;
   try{ localStorage.setItem(RKEY(), JSON.stringify({ v:1, year:S.year, mode:S.mode, secs:S.secs, zoom:S.zoom,
@@ -251,10 +255,13 @@ const GAME = (()=>{
 
   /* จำนวนปีของข้อสอบจริงที่เคยทำจบ (นับปีไม่ซ้ำ ไม่ว่าคณิตหรือวิทย์) */
   function realYears(n){
-    const out = new Set();
-    ['math','sci'].forEach(k=>{ try{
-      JSON.parse(localStorage.getItem('tedet-real-'+k+':'+(n||PROF.active))||'[]').forEach(r=> out.add(String(r.year)));
-    }catch(e){} });
+    const out = new Set(), me = ':'+(n||PROF.active);
+    for(let i=0;i<localStorage.length;i++){
+      const k = localStorage.key(i);
+      if(k && k.startsWith('tedet-real-') && k.endsWith(me)){
+        try{ JSON.parse(localStorage.getItem(k)||'[]').forEach(r=> out.add(String(r.year))); }catch(e){}
+      }
+    }
     return out.size;
   }
 
@@ -547,7 +554,7 @@ function home(){
   app.innerHTML = `
     <div class="row"><h1 style="margin:0">🔬 ${document.title}</h1><span class="grow"></span>
       <button class="chip" id="profChip" style="border:none;cursor:pointer;font-family:inherit">👤 ${esc(PROF.active)||'เลือกโปรไฟล์'}</button></div>
-    <p class="sub">ข้อสอบจริงโครงการ TEDET วิชา${SUBJ_NAME} ป.5 · 30 ข้อ / 90 นาที — เลือกปีที่จะทำได้เลย
+    <p class="sub">ข้อสอบจริงโครงการ TEDET วิชา${SUBJ_NAME} ${GRADE_LABEL} · 30 ข้อ / 90 นาที — เลือกปีที่จะทำได้เลย
     ${SUBJ_KEY==='sci'?'<br><b>กติกาสำคัญ:</b> บางข้อมีคำตอบถูกมากกว่า 1 ข้อ ต้องเลือกให้ครบทุกข้อจึงได้คะแนน':'<br><b>วิธีตอบ:</b> ข้อปรนัยให้กรอกหมายเลขตัวเลือก (1–5) ข้อคำนวณให้กรอกคำตอบเป็นตัวเลข'}</p>
     ${RS?`<div class="card" style="margin:14px 0; border:2px solid #F59E0B">
       <h2 style="margin:0 0 6px">⏱️ มีข้อสอบค้างอยู่</h2>
@@ -558,7 +565,7 @@ function home(){
       const b = store.best(y);
       return `<div class="ycard" role="button" tabindex="0" data-y="${y}">
         <b>ปี ${y}</b><br>
-        ${b!==null?`<span class="best">คะแนนดีที่สุด ${b}/30</span>`:`<span class="none">ยังไม่เคยทำ</span>`}</div>`;
+        ${b!==null?`<span class="best">คะแนนดีที่สุด ${b}/${TOT(y)}</span>`:`<span class="none">ยังไม่เคยทำ</span>`}</div>`;
     }).join('')}</div>
     <p class="sub" style="margin-top:14px">แตะปีที่ต้องการ แล้วเลือกได้ว่าจะ <b>🎯 ฝึก</b> (ตรวจทีละข้อ พร้อมวิธีคิด) หรือ <b>⏱️ สอบเสมือนจริง</b> (จับเวลา 90 นาที)</p>
     <p class="foot">🔒 ความเป็นส่วนตัว: เว็บนี้<b>ไม่มีการเก็บข้อมูลใด ๆ</b> ขึ้นเซิร์ฟเวอร์ — โปรไฟล์และคะแนนทั้งหมดบันทึกอยู่ในเบราว์เซอร์ของคุณเท่านั้น<br>ข้อสอบและเฉลยจากคลังข้อสอบ <a href="https://www.tedet.or.th/main/exam-library.asp" target="_blank" rel="noopener">tedet.or.th</a> · ใช้เพื่อการฝึกฝนส่วนตัว · <b>By PartnerX</b></p>`;
@@ -667,7 +674,7 @@ function exam(){
       <span class="grow"></span>
       <span class="sub" id="cnt">${prac
         ? `ถูก ${S.marks.filter(Boolean).length} / ตรวจแล้ว ${S.checked.filter(Boolean).length}`
-        : `ตอบแล้ว <b>${S.answers.filter((_,i)=>ansDone(i)).length}</b>/30`}</span>
+        : `ตอบแล้ว <b>${S.answers.filter((_,i)=>ansDone(i)).length}</b>/${TOT(S.year)}`}</span>
       <button class="btn warn" id="submit">${prac?'จบการฝึก':'ส่งคำตอบ'}</button>
     </div>
     <div class="examgrid">
@@ -675,7 +682,7 @@ function exam(){
         ${d.pages.map((p,i)=>`<img loading="lazy" src="${p}" alt="หน้าข้อสอบ ${i+1}">`).join('')}
       </div>
       <div class="card sheet ${S.sheetOpen?'open':''}" id="sheet">
-        <div class="handle" id="handle"><span>✍️ กระดาษคำตอบ</span><span id="hcnt">${S.answers.filter((_,i)=>ansDone(i)).length}/30</span></div>
+        <div class="handle" id="handle"><span>✍️ กระดาษคำตอบ</span><span id="hcnt">${S.answers.filter((_,i)=>ansDone(i)).length}/${TOT(S.year)}</span></div>
         <h2 style="margin:4px 0 8px; font-size:1.05rem">กระดาษคำตอบ</h2>
         ${SUBJ_KEY==='sci'?'<p class="sub" style="font-size:.82rem;margin:0 0 6px">⚠️ บางข้อถูกมากกว่า 1 — เลือกให้ครบ</p>':''}
         <div id="rows">${Array.from({length:30},(_,i)=>rowHTML(i)).join('')}</div>
@@ -690,6 +697,7 @@ function exam(){
 }
 
 function rowHTML(i){
+  if(isVoid(S.year,i)) return `<div class="srow" id="r${i}" style="opacity:.55"><span class="qn">${i+1}</span><span class="sub" style="font-size:.85rem">ข้อนี้ยกเลิกตามประกาศ — ไม่นับคะแนน</span></div>`;
   const prac = S.mode==='practice';
   const locked = prac && S.checked[i];
   let inner;
@@ -713,13 +721,13 @@ function refreshCounts(){
   const el=$('#cnt'), h=$('#hcnt');
   if(S.mode==='practice'){
     if(el) el.textContent = `ถูก ${S.marks.filter(Boolean).length} / ตรวจแล้ว ${S.checked.filter(Boolean).length}`;
-    if(h) h.textContent = S.checked.filter(Boolean).length+'/30';
+    if(h) h.textContent = S.checked.filter(Boolean).length+'/'+TOT(S.year);
     saveS();
     return;
   }
   const c = S.answers.filter((_,i)=>ansDone(i)).length;
-  if(el) el.innerHTML = `ตอบแล้ว <b>${c}</b>/30`;
-  if(h) h.textContent = c+'/30';
+  if(el) el.innerHTML = `ตอบแล้ว <b>${c}</b>/${TOT(S.year)}`;
+  if(h) h.textContent = c+'/'+TOT(S.year);
   saveS();
 }
 function updateRow(i){
@@ -729,6 +737,7 @@ function updateRow(i){
   refreshCounts();
 }
 function checkOne(i){
+  if(isVoid(S.year,i)) return;
   if(!ansDone(i)){ alert('ตอบข้อ '+(i+1)+' ก่อนแล้วค่อยกดตรวจนะ 😊'); return; }
   S.checked[i]=true;
   S.marks[i]=matchKey(EXAM_DATA[S.year].key[i], S.answers[i]);
@@ -761,7 +770,7 @@ function wireRows(){ wireRow(document.getElementById('rows')); }
 
 function confirmSubmit(){
   const prac = S.mode==='practice';
-  const blank = prac ? S.checked.filter(c=>!c).length : S.answers.filter((_,i)=>!ansDone(i)).length;
+  const blank = prac ? S.checked.filter((c,i)=>!c && !isVoid(S.year,i)).length : S.answers.filter((_,i)=>!ansDone(i) && !isVoid(S.year,i)).length;
   const bd = document.createElement('div');
   bd.className='modal-backdrop';
   bd.innerHTML = `<div class="card modal">
@@ -797,21 +806,22 @@ function grade(){
   clearS();
   const d = EXAM_DATA[S.year];
   const prac = S.mode==='practice';
-  const marks = d.key.map((alts,i)=> matchKey(alts, S.answers[i]));
+  const marks = d.key.map((alts,i)=> !isVoid(S.year,i) && matchKey(alts, S.answers[i]));
   const score = marks.filter(Boolean).length;
+  const tot = TOT(S.year);
   const prev = store.best(S.year);
   const improved = prev===null ? 0 : score - prev;
-  if(!prac) store.push({ date:new Date().toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'2-digit'}), year:S.year, score, total:30 });
-  GAME.finish({kind: prac?'practice':'real', score, total:30, year:S.year, improved});   // หลัง push แล้ว เหรียญ "จำนวนปีที่ทำจบ" ถึงจะนับปีนี้ด้วย
-  const pct = Math.round(score/30*100);
-  const pdf = `https://www.tedet.or.th/files/tedet${S.year}/answer/Answer_TEDET${S.year}_${PDF_SUBJ}_G5.pdf`;
+  if(!prac) store.push({ date:new Date().toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'2-digit'}), year:S.year, score, total:tot });
+  GAME.finish({kind: prac?'practice':'real', score, total:tot, year:S.year, improved});   // หลัง push แล้ว เหรียญ "จำนวนปีที่ทำจบ" ถึงจะนับปีนี้ด้วย
+  const pct = Math.round(score/tot*100);
+  const pdf = `https://www.tedet.or.th/files/tedet${S.year}/answer/Answer_TEDET${S.year}_${PDF_SUBJ}_${GLEVEL}.pdf`;
   const hasExpl = hasSolutions(S.year);
   app.innerHTML = `
     <div class="card scorehero">
       <div style="font-size:2.8rem">${pct>=80?'🏆':pct>=50?'🎖️':'🌱'}</div>
       <h1>${prac?'สรุปการฝึก':'ผลสอบจริง'}ปี ${S.year} · ${SUBJ_NAME}</h1>
-      <div class="scorebig">${score} / 30</div>
-      ${!prac && improved!==0 ? `<div class="chip" style="background:${improved>0?'var(--ok-soft)':'var(--grid)'}; color:var(--ink); font-size:1rem">${improved>0?`📈 ดีขึ้น +${improved} ข้อจากครั้งก่อน!`:`ครั้งก่อนทำได้ ${prev}/30 — เอาใหม่ได้!`}</div>` : ''}
+      <div class="scorebig">${score} / ${tot}</div>
+      ${!prac && improved!==0 ? `<div class="chip" style="background:${improved>0?'var(--ok-soft)':'var(--grid)'}; color:var(--ink); font-size:1rem">${improved>0?`📈 ดีขึ้น +${improved} ข้อจากครั้งก่อน!`:`ครั้งก่อนทำได้ ${prev}/${tot} — เอาใหม่ได้!`}</div>` : ''}
       <p class="sub">${pct>=80?'สุดยอด! ระดับหัวแถวของสนามจริงเลย':pct>=50?'ทำได้ดีมาก ลองทบทวนข้อที่พลาดดู':'สนามจริงยากแบบนี้แหละ — ดูวิธีคิดแล้วลองใหม่ได้เลย'}${prac?' (คะแนนโหมดฝึกไม่ถูกบันทึกเป็นสถิติ)':''}</p>
       <div class="row" style="justify-content:center; margin-top:10px">
         <a class="btn ghost" href="${pdf}" target="_blank" rel="noopener">⬇️ ไฟล์เฉลย PDF ต้นฉบับ</a>
@@ -821,7 +831,9 @@ function grade(){
       <h2>ตรวจรายข้อ ${hasExpl?'<span class="sub" style="font-size:.85rem;font-weight:400">— กด 📖 เพื่อดูวิธีคิดของข้อนั้น</span>':''}</h2>
       <table class="res">
         <tr><th>ข้อ</th><th>คำตอบของหนู</th><th>เฉลย</th><th>ผล</th>${hasExpl?'<th>วิธีคิด</th>':''}</tr>
-        ${d.key.map((alts,i)=>`<tr>
+        ${d.key.map((alts,i)=> isVoid(S.year,i)
+          ? `<tr style="opacity:.55"><td>${i+1}</td><td colspan="2" class="sub">ข้อนี้ยกเลิกตามประกาศ — ไม่นับคะแนน</td><td>—</td>${hasExpl?'<td></td>':''}</tr>`
+          : `<tr>
           <td>${i+1}</td><td>${ansText(S.answers[i])}</td><td>${keyText(alts)}</td>
           <td class="mark ${marks[i]?'ok':'bad'}">${marks[i]?'✔':'✘'}</td>
           ${hasExpl?`<td><button class="explbtn" data-e="${i+1}">📖</button></td>`:''}</tr>`).join('')}

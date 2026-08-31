@@ -30,10 +30,13 @@ const GAME = (()=>{
 
   /* จำนวนปีของข้อสอบจริงที่เคยทำจบ (นับปีไม่ซ้ำ ไม่ว่าคณิตหรือวิทย์) */
   function realYears(n){
-    const out = new Set();
-    ['math','sci'].forEach(k=>{ try{
-      JSON.parse(localStorage.getItem('tedet-real-'+k+':'+(n||PROF.active))||'[]').forEach(r=> out.add(String(r.year)));
-    }catch(e){} });
+    const out = new Set(), me = ':'+(n||PROF.active);
+    for(let i=0;i<localStorage.length;i++){
+      const k = localStorage.key(i);
+      if(k && k.startsWith('tedet-real-') && k.endsWith(me)){
+        try{ JSON.parse(localStorage.getItem(k)||'[]').forEach(r=> out.add(String(r.year))); }catch(e){}
+      }
+    }
     return out.size;
   }
 

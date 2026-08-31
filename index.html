@@ -452,6 +452,43 @@ const store = {
 };
 let S = {}; // session state
 
+/* ---------- ห้องสอบตามระดับชั้น ----------
+   ponytail: access:'free' ทุกห้องวันนี้ — ช่อง 'code' เผื่อขายแพ็กในอนาคต:
+   ใส่ access:'code' + code:'XXX' แล้วห้องจะล็อกจนกรอกรหัสถูก (เก็บใน tedet-unlock) */
+const GRADES = [
+  {id:'p5', label:'ป.5', rooms:[
+    {emoji:'📐', name:'ห้องสอบคณิตศาสตร์', file:'exam-math.html', cls:'', art:'https://claude.ai/code/artifact/7618e4bc-6f96-42a4-aec0-5375569020a1', access:'free'},
+    {emoji:'🔬', name:'ห้องสอบวิทยาศาสตร์', file:'exam-sci.html', cls:'sci', art:'https://claude.ai/code/artifact/39a9fe77-b71e-401d-bdfe-04226aac9edd', access:'free'},
+  ]},
+  {id:'p6', label:'ป.6', rooms:[
+    {emoji:'📐', name:'ห้องสอบคณิตศาสตร์', file:'exam-math-g6.html', cls:'', access:'free'},
+    {emoji:'🔬', name:'ห้องสอบวิทยาศาสตร์', file:'exam-sci-g6.html', cls:'sci', access:'free'},
+  ]},
+];
+const curGrade = ()=> localStorage.getItem('tedet-grade') || 'p5';
+const unlocked = r => r.access==='free' ||
+  (JSON.parse(localStorage.getItem('tedet-unlock')||'[]')).includes(r.code);
+function drawRooms(){
+  const g = GRADES.find(x=>x.id===curGrade()) || GRADES[0];
+  const onClaude = location.hostname==='claude.ai';
+  $('#roomLinks').innerHTML = g.rooms.map(r=>{
+    if(!unlocked(r)) return `<button class="btn ghost" data-lock="${r.code}">🔒 ${r.name} — ใส่รหัสปลดล็อก</button>`;
+    const href = onClaude && r.art ? r.art : r.file;
+    if(onClaude && !r.art) return `<span class="chip plain">${r.emoji} ${r.name} — เปิดได้บนเว็บ tedet.partnerx.asia</span>`;
+    return `<a class="btn ${r.cls}" href="${href}" target="_blank" rel="noopener">${r.emoji} ${r.name}</a>`;
+  }).join('');
+  document.querySelectorAll('#gradeTabs .btn').forEach(b=>{
+    b.classList.toggle('ghost', b.dataset.g!==g.id);
+    b.onclick = ()=>{ localStorage.setItem('tedet-grade', b.dataset.g); drawRooms(); };
+  });
+  document.querySelectorAll('[data-lock]').forEach(b=> b.onclick = ()=>{
+    const c = prompt('ใส่รหัสปลดล็อก'); if(!c) return;
+    const l = JSON.parse(localStorage.getItem('tedet-unlock')||'[]');
+    if(c.trim()===b.dataset.lock){ l.push(c.trim()); localStorage.setItem('tedet-unlock', JSON.stringify(l)); drawRooms(); }
+    else alert('รหัสไม่ถูกต้อง');
+  });
+}
+
 /* ---------- บันทึกความคืบหน้าอัตโนมัติ (กันปิดเบราว์เซอร์แล้วหาย) ---------- */
 const RKEY = ()=> 'tedet-resume:'+PROF.active;
 function saveS(){
@@ -508,10 +545,13 @@ const GAME = (()=>{
 
   /* จำนวนปีของข้อสอบจริงที่เคยทำจบ (นับปีไม่ซ้ำ ไม่ว่าคณิตหรือวิทย์) */
   function realYears(n){
-    const out = new Set();
-    ['math','sci'].forEach(k=>{ try{
-      JSON.parse(localStorage.getItem('tedet-real-'+k+':'+(n||PROF.active))||'[]').forEach(r=> out.add(String(r.year)));
-    }catch(e){} });
+    const out = new Set(), me = ':'+(n||PROF.active);
+    for(let i=0;i<localStorage.length;i++){
+      const k = localStorage.key(i);
+      if(k && k.startsWith('tedet-real-') && k.endsWith(me)){
+        try{ JSON.parse(localStorage.getItem(k)||'[]').forEach(r=> out.add(String(r.year))); }catch(e){}
+      }
+    }
     return out.size;
   }
 
@@ -830,11 +870,11 @@ function home(){
     ${h.length?`<div class="card" style="margin-top:16px"><h2>ผลสอบล่าสุด 📊</h2><table class="hist">${histRows}</table></div>`:''}
     <div class="card" style="margin-top:16px">
       <h2>ห้องสอบข้อสอบจริงย้อนหลัง 📚</h2>
-      <p class="sub" style="margin:4px 0 10px">ทำข้อสอบจริงทุกปี (2557–2568) ในเว็บได้เลย — จับเวลา 90 นาที ตรวจให้อัตโนมัติ พร้อมลิงก์เฉลยวิธีคิดฉบับจริง</p>
-      <div class="row">
-        <a class="btn" id="lnkMath" href="exam-math.html" target="_blank" rel="noopener">📐 ห้องสอบคณิตศาสตร์</a>
-        <a class="btn sci" id="lnkSci" href="exam-sci.html" target="_blank" rel="noopener">🔬 ห้องสอบวิทยาศาสตร์</a>
+      <p class="sub" style="margin:4px 0 10px">ทำข้อสอบจริงทุกปี (2557–2568) ในเว็บได้เลย — จับเวลา 90 นาที ตรวจให้อัตโนมัติ พร้อมเฉลยวิธีคิดฉบับจริง</p>
+      <div class="row" style="margin-bottom:10px" id="gradeTabs">
+        ${GRADES.map(g=>`<button class="btn ${g.id===curGrade()?'':'ghost'}" data-g="${g.id}">${g.label}</button>`).join('')}
       </div>
+      <div class="row" id="roomLinks"></div>
     </div>
     <p class="foot">🔒 ความเป็นส่วนตัว: เว็บนี้<b>ไม่มีการเก็บข้อมูลใด ๆ</b> ขึ้นเซิร์ฟเวอร์ — โปรไฟล์และคะแนนทั้งหมดบันทึกอยู่ในเบราว์เซอร์ของคุณเท่านั้น<br>สร้างเพื่อการฝึกฝนส่วนตัว · แนวข้อสอบอ้างอิงโครงสร้างจากโครงการ TEDET · <b>By PartnerX</b></p>`;
   if(RS){ $('#resume').onclick = resumeExam;
@@ -842,11 +882,7 @@ function home(){
   GAME.wire(home);
   $('#profChip').onclick = ()=> showProfiles(true);
   showProfiles(false);   // ครั้งแรก/ยังไม่เลือกคน → เด้งให้เลือกก่อน
-  // บน claude.ai เปิดห้องสอบเป็น artifact แยก — ที่อื่น (GitHub Pages / เปิดไฟล์ในเครื่อง) ใช้ไฟล์ข้างกัน
-  if(location.hostname==='claude.ai'){
-    $('#lnkMath').href = 'https://claude.ai/code/artifact/7618e4bc-6f96-42a4-aec0-5375569020a1';
-    $('#lnkSci').href  = 'https://claude.ai/code/artifact/39a9fe77-b71e-401d-bdfe-04226aac9edd';
-  }
+  drawRooms();
   document.querySelectorAll('[data-go]').forEach(el=>{
     const go = ()=> el.dataset.go==='practice' ? practiceSetup() : mockSetup();
     el.addEventListener('click', go);
