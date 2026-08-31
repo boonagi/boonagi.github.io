@@ -5,10 +5,15 @@ const GAME = (()=>{
   const KEY = n => 'tedet-game:'+(n||PROF.active);
   const iso = d => d.toLocaleDateString('sv-SE');          // YYYY-MM-DD ตามเวลาเครื่อง
   const TODAY = ()=> iso(new Date());
-  const BLANK = ()=>({xp:0, days:[], badges:[], topics:{}, quest:null, examDate:'', bestCombo:0, questDone:0});
+  const BLANK = ()=>({xp:0, days:[], badges:[], topics:{}, quest:null, examDate:'', bestCombo:0, questDone:0, grade:''});
   const load = n => { try{ return Object.assign(BLANK(), JSON.parse(localStorage.getItem(KEY(n))||'{}')); }catch(e){ return BLANK(); } };
   const save = g => { try{ localStorage.setItem(KEY(), JSON.stringify(g)); }catch(e){} };
   let combo = 0;   // ถูกติดกันกี่ข้อ — นับเฉพาะรอบที่เปิดหน้าอยู่ ไม่ต้องเก็บลงเครื่อง
+
+  /* ระดับชั้นของโปรไฟล์ — เควสและตารางแข่งใช้อันนี้ */
+  const GLABEL = {p5:'ป.5', p6:'ป.6', m1:'ม.1'};
+  const gradeOf = n => load(n).grade || '';
+  const setGrade = (n, gr) => { const g = load(n); g.grade = gr; try{ localStorage.setItem(KEY(n), JSON.stringify(g)); }catch(e){} };
 
   /* ยศจากเปอร์เซ็นต์คะแนน (ธีม TEDET Quest): S ≥90, A ≥75, B ≥60, C ต่ำกว่า */
   const rank = pct => pct>=90?'S':pct>=75?'A':pct>=60?'B':'C';
@@ -182,7 +187,7 @@ const GAME = (()=>{
 
   /* ---------- ตารางในบ้าน: จัดอันดับทุกโปรไฟล์ในเครื่องนี้ ---------- */
   function board(){
-    return PROF.list().map(n=>{ const g = load(n); return {name:n, xp:g.xp, lv:level(g.xp), s:streak(g.days), b:g.badges.length}; })
+    return PROF.list().map(n=>{ const g = load(n); return {name:n, xp:g.xp, lv:level(g.xp), s:streak(g.days), b:g.badges.length, gr:g.grade||''}; })
                       .sort((a,b)=> b.xp-a.xp);
   }
 
@@ -225,6 +230,7 @@ const GAME = (()=>{
   .glb{width:100%; border-collapse:collapse; margin-top:6px; font-size:.92rem}
   .glb td{padding:5px 6px; border-bottom:1px solid var(--line)}
   .glb tr.me{background:var(--math-soft); font-weight:700}
+  .ggr{display:inline-block; font-size:.7rem; font-weight:700; color:var(--sci); background:var(--sci-soft); border-radius:999px; padding:1px 7px; vertical-align:1px}
   .gspark{width:100%; height:52px; margin-top:6px; overflow:visible}
   .gweak{background:var(--bad-soft); border-radius:10px; padding:8px 10px; margin-top:8px; font-size:.9rem}
   .gtoast{position:fixed; left:50%; bottom:28px; transform:translateX(-50%); z-index:9999; pointer-events:none;
@@ -315,9 +321,10 @@ const GAME = (()=>{
           <h2>🏆 ธงประจำบ้าน</h2>
           <table class="glb">${lb.map((r,i)=>`<tr class="${r.name===PROF.active?'me':''}">
             <td style="width:28px">${['🥇','🥈','🥉'][i]||(i+1)}</td>
-            <td>${esc(r.name)}</td>
+            <td>${esc(r.name)}${r.gr?` <span class="ggr">${GLABEL[r.gr]||r.gr}</span>`:''}</td>
             <td class="sub" style="text-align:right; white-space:nowrap">Lv.${r.lv} · ${r.xp} XP</td>
             <td class="sub" style="text-align:right; white-space:nowrap">🔥${r.s}</td></tr>`).join('')}</table>
+          <div class="sub" style="font-size:.75rem; margin-top:4px">XP วัดความขยัน — คนละชั้นก็แข่งกันได้</div>
           ${opts.scores && opts.scores.length>1 ? `<h2 style="margin-top:14px">📈 กราฟฝีมือ</h2>${sparkline(opts.scores)}
             <div class="sub" style="font-size:.8rem">คะแนน ${opts.scores.length} ครั้งล่าสุด (เก่า → ใหม่)</div>` : ''}
           ${weak ? `<div class="gweak">จุดที่ควรซ้อม: <b>${esc(weak[0])}</b> — ถูก ${weak[1].ok}/${weak[1].n} ข้อ</div>` : ''}
@@ -361,5 +368,5 @@ const GAME = (()=>{
   if(new Set(BADGES.map(b=>b.id)).size!==BADGES.length) console.error('badge id ซ้ำ');
   if(new Set(QUESTS.map(q=>q.id)).size!==QUESTS.length) console.error('quest id ซ้ำ');
 
-  return {card, wire, answered, finish, board, level, streak, load, rank, rankTitle, NAGA, resetCombo:()=>{combo=0;}, BADGES};
+  return {card, wire, answered, finish, board, level, streak, load, rank, rankTitle, NAGA, grade:gradeOf, setGrade, GLABEL, resetCombo:()=>{combo=0;}, BADGES};
 })();
