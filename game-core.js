@@ -10,6 +10,22 @@ const GAME = (()=>{
   const save = g => { try{ localStorage.setItem(KEY(), JSON.stringify(g)); }catch(e){} };
   let combo = 0;   // ถูกติดกันกี่ข้อ — นับเฉพาะรอบที่เปิดหน้าอยู่ ไม่ต้องเก็บลงเครื่อง
 
+  /* ยศจากเปอร์เซ็นต์คะแนน (ธีม TEDET Quest): S ≥90, A ≥75, B ≥60, C ต่ำกว่า */
+  const rank = pct => pct>=90?'S':pct>=75?'A':pct>=60?'B':'C';
+  /* ฉายานักผจญภัยตามเลเวล */
+  const rankTitle = lv => lv>=15?'ผู้พิชิตยอดเขา':lv>=10?'นายพรานโจทย์':lv>=5?'นักสำรวจ':'นักเดินป่าฝึกหัด';
+  /* น้องนาคา — มาสคอต inline SVG ตัวเดียวทั้งเว็บ */
+  const NAGA = `<svg class="naga" width="64" height="52" viewBox="0 0 64 52" aria-hidden="true">
+    <path d="M6 46 Q 2 34 12 30 T 26 22 Q 38 16 36 8" fill="none" stroke="var(--sci)" stroke-width="8" stroke-linecap="round"/>
+    <path d="M8 44 Q 6 36 14 32" fill="none" stroke="var(--flag)" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="38" cy="10" r="9" fill="var(--sci)"/>
+    <path d="M36 1 l3 -5 l3 5 z" fill="var(--flag)"/>
+    <g class="eye" style="transform-origin:41px 9px">
+      <circle cx="38" cy="9" r="1.8" fill="#fff"/><circle cx="44" cy="9" r="1.8" fill="#fff"/>
+    </g>
+    <path d="M40 14 q 3 2 6 0" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/>
+  </svg>`;
+
   /* เลเวล: ช่วงแรกขึ้นไว แล้วค่อย ๆ ห่างขึ้น — XP ที่ต้องใช้ถึงเลเวล n = 50*(n-1)² */
   const level = xp => Math.floor(Math.sqrt(Math.max(0,xp)/50))+1;
   const lvlXP = n => 50*(n-1)*(n-1);
@@ -172,24 +188,39 @@ const GAME = (()=>{
 
   /* ---------- หน้าตา ---------- */
   const CSS = `
-  .gcard{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px 18px; box-shadow:var(--shadow); margin-top:16px}
+  .gcard{position:relative; background:var(--card); border:2px solid var(--line); border-radius:18px; padding:16px 18px; box-shadow:var(--shadow); margin-top:16px}
   .gcard h2{margin:0 0 10px; font-size:1.05rem}
+  .gnaga{position:absolute; top:-30px; right:22px; pointer-events:none}
+  .gtrail{display:flex; align-items:flex-start; gap:4px; margin:0 0 14px; flex-wrap:wrap; padding-bottom:16px}
+  .gtnode{position:relative; width:44px; height:44px; border-radius:50%; border:2px dashed var(--line); background:var(--paper);
+    display:grid; place-items:center; font-size:1.15rem; flex:none}
+  .gtnode i{position:absolute; top:100%; left:50%; transform:translateX(-50%); font-style:normal; font-size:.68rem; color:var(--muted); white-space:nowrap; margin-top:2px}
+  .gtnode.on{border-style:solid; border-color:var(--flag); background:color-mix(in srgb, var(--flag) 22%, var(--card))}
+  .gtnode.gflag{border-color:var(--flag)}
+  .gtline{flex:1; min-width:14px; border-top:3px dotted var(--line); margin-top:21px}
   .ggrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:16px}
   .glvl{display:flex; align-items:center; gap:12px}
-  .gring{width:54px; height:54px; border-radius:50%; display:grid; place-items:center; font-family:'Mitr'; font-size:1.25rem;
-         color:#fff; background:var(--math); flex:none}
-  .gbar{height:9px; border-radius:9px; background:var(--grid); overflow:hidden; margin-top:6px}
-  .gbar i{display:block; height:100%; background:var(--math); border-radius:9px; transition:width .5s}
+  .gcompass{flex:none}
+  .gbar{position:relative; height:10px; border-radius:9px; margin-top:8px;
+    background:repeating-linear-gradient(90deg, var(--grid) 0 8px, transparent 8px 14px)}
+  .gbar i{display:block; height:100%; background:var(--math); border-radius:9px; transition:width .6s cubic-bezier(.22,1,.36,1)}
   .gbar.q i{background:var(--ok)}
-  .gdays{display:flex; gap:5px; margin-top:8px}
-  .gday{width:26px; height:26px; border-radius:8px; background:var(--grid); display:grid; place-items:center; font-size:.7rem; color:var(--muted)}
-  .gday.on{background:var(--flag); color:#3a2400; font-weight:700}
-  .gbadges{display:flex; flex-wrap:wrap; gap:8px; margin-top:8px}
-  .gb{width:44px; height:44px; border-radius:12px; display:grid; place-items:center; font-size:1.35rem; background:var(--grid)}
-  .gb.lock{opacity:.3; filter:grayscale(1)}
+  .gdays{display:flex; gap:5px; margin-top:12px}
+  .gday{width:30px; height:30px; border-radius:50%; background:var(--paper); border:2px solid var(--line); display:grid; place-items:center; font-size:.66rem; color:var(--muted); position:relative}
+  .gday.on{border-color:var(--accent); background:color-mix(in srgb, var(--accent) 18%, var(--card)); color:var(--ink); font-weight:700}
+  .gday.on::after{content:'🔥'; position:absolute; top:-11px; font-size:.72rem}
+  .gday.on:last-child::after{animation:gflick 1.1s ease-in-out infinite alternate; transform-origin:bottom}
+  @keyframes gflick{from{transform:scaleY(1)} to{transform:scaleY(1.12) skewX(2deg)}}
+  .gseal{color:var(--ok); font-weight:700}
+  .gbadges{display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; align-items:center}
+  .gb{width:46px; height:46px; display:grid; place-items:center; font-size:1.35rem;
+    background:var(--paper); border:2px solid var(--flag);
+    clip-path:polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%); border-radius:10px}
+  .gb.lock,.gb.ghost{opacity:.35; filter:grayscale(1); border:2px dashed var(--line)}
+  .gb.ghost{opacity:.22}
   .gbwrap{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; margin-top:10px}
-  .gbrow{display:flex; gap:10px; align-items:center; background:var(--grid); border-radius:12px; padding:8px 10px}
-  .gbrow.lock .gb{opacity:.3; filter:grayscale(1)}
+  .gbrow{display:flex; gap:10px; align-items:center; background:var(--paper); border-radius:12px; padding:8px 10px}
+  .gbrow.lock .gb{opacity:.3; filter:grayscale(1); border-style:dashed}
   .gbrow .t{font-size:.82rem; line-height:1.3}
   .glb{width:100%; border-collapse:collapse; margin-top:6px; font-size:.92rem}
   .glb td{padding:5px 6px; border-bottom:1px solid var(--line)}
@@ -197,12 +228,14 @@ const GAME = (()=>{
   .gspark{width:100%; height:52px; margin-top:6px; overflow:visible}
   .gweak{background:var(--bad-soft); border-radius:10px; padding:8px 10px; margin-top:8px; font-size:.9rem}
   .gtoast{position:fixed; left:50%; bottom:28px; transform:translateX(-50%); z-index:9999; pointer-events:none;
-          background:var(--ink); color:var(--paper); padding:10px 18px; border-radius:999px; font-weight:600;
-          box-shadow:0 6px 24px rgba(0,0,0,.28); animation:gpop .3s ease-out; text-align:center}
-  .gtoast.big{border-radius:16px; padding:14px 24px; font-size:1.05rem; background:var(--flag); color:#3a2400}
+    background:var(--ink); color:var(--paper); padding:10px 18px; border-radius:999px; font-weight:600;
+    box-shadow:0 6px 24px rgba(0,0,0,.28); animation:gpop .3s ease-out; text-align:center}
+  .gtoast.big{border-radius:16px; padding:14px 24px; font-size:1.05rem; background:var(--flag); color:#3a2400;
+    animation:gstamp .45s cubic-bezier(.34,1.56,.64,1)}
   .gtoast.out{opacity:0; transition:opacity .4s}
   @keyframes gpop{from{opacity:0; transform:translate(-50%,14px)} to{opacity:1; transform:translate(-50%,0)}}
-  @media (prefers-reduced-motion:reduce){ .gtoast{animation:none} .gbar i{transition:none} }`;
+  @keyframes gstamp{from{opacity:0; transform:translate(-50%,0) scale(2)} to{opacity:1; transform:translate(-50%,0) scale(1)}}
+  @media (prefers-reduced-motion:reduce){ .gtoast{animation:none} .gbar i{transition:none} .gday.on:last-child::after{animation:none} }`;
 
   function sparkline(pts){
     if(pts.length<2) return '';
@@ -233,37 +266,53 @@ const GAME = (()=>{
     const days = g.examDate ? Math.ceil((new Date(g.examDate+'T00:00') - new Date(TODAY()+'T00:00'))/86400000) : null;
     const shown = BADGES.filter(b=> g.badges.includes(b.id)).slice(-5);
 
+    const trail = [
+      {e:'⛺', t:'เปิดแคมป์', on:true},
+      {e:'🎯', t:'เควส', on:g.quest.done},
+      {e:'✏️', t:'ฝึกวันนี้', on:set.has(TODAY())},
+      {e:'🚩', t: days!==null && days>0 ? `อีก ${days} วัน` : 'ยอดเขา', on:false, flag:true},
+    ];
+    const R = 25, CIRCUM = 2*Math.PI*R, frac = Math.min(1, cur/need);
     return `<div class="gcard" id="gcard">
+      <div class="gnaga">${NAGA}</div>
+      <div class="gtrail" role="img" aria-label="เส้นทางวันนี้">
+        ${trail.map((n,k)=>`${k?'<span class="gtline"></span>':''}<span class="gtnode ${n.on?'on':''} ${n.flag?'gflag':''}" title="${n.t}">${n.e}<i>${n.t}</i></span>`).join('')}
+      </div>
       <div class="ggrid">
         <div>
-          <h2>⭐ เลเวลของ${esc(PROF.active)}</h2>
+          <h2>🧭 ${esc(PROF.active)} · <span class="ranktitle">${rankTitle(lv)}</span></h2>
           <div class="glvl">
-            <div class="gring">${lv}</div>
+            <svg class="gcompass" width="66" height="66" viewBox="0 0 66 66">
+              <circle cx="33" cy="33" r="${R}" fill="none" stroke="var(--grid)" stroke-width="7"/>
+              <circle cx="33" cy="33" r="${R}" fill="none" stroke="var(--accent)" stroke-width="7" stroke-linecap="round"
+                stroke-dasharray="${(frac*CIRCUM).toFixed(1)} ${CIRCUM.toFixed(1)}" transform="rotate(-90 33 33)"/>
+              <text x="33" y="39" text-anchor="middle" class="gring" style="font-size:1.15rem; fill:var(--ink)">${lv}</text>
+            </svg>
             <div style="flex:1">
-              <div class="sub" style="font-size:.85rem">${cur} / ${need} XP → เลเวล ${lv+1}</div>
-              <div class="gbar"><i style="width:${Math.round(cur/need*100)}%"></i></div>
-              <div class="sub" style="font-size:.8rem; margin-top:4px">สะสมทั้งหมด ${g.xp} XP · ${g.badges.length}/${BADGES.length} เหรียญ</div>
+              <div class="sub" style="font-size:.85rem">เลเวล ${lv} · ${cur}/${need} XP → ด่านต่อไป</div>
+              <div class="gbar"><i style="width:${Math.round(frac*100)}%"></i></div>
+              <div class="sub" style="font-size:.8rem; margin-top:4px">สะสม ${g.xp} XP · ${g.badges.length}/${BADGES.length} เหรียญ</div>
             </div>
           </div>
-          <h2 style="margin-top:14px">🔥 ไฟติด ${s} วัน${s>=3?' สุดยอด!':''}</h2>
+          <h2 style="margin-top:14px">🔥 กองไฟติด ${s} วัน${s>=3?' สุดยอด!':''}</h2>
           <div class="gdays">${dots}</div>
           <div class="sub" style="font-size:.78rem; margin-top:6px">มีโล่กันไฟดับ — ขาดได้ 1 วันไฟไม่ดับ</div>
         </div>
         <div>
-          <h2>🎯 ภารกิจวันนี้</h2>
-          <div>${g.quest.done?'✅ ':''}${q.t} <span class="sub">(${Math.min(g.quest.n,q.goal)}/${q.goal})</span></div>
+          <h2>🎯 เควสวันนี้</h2>
+          <div class="gquest">${g.quest.done?'<span class="gseal">สำเร็จ ✔</span> ':''}${q.t} <span class="sub">(${Math.min(g.quest.n,q.goal)}/${q.goal})</span></div>
           <div class="gbar q"><i style="width:${qp}%"></i></div>
-          <div class="sub" style="font-size:.82rem; margin-top:4px">${g.quest.done?`ทำสำเร็จแล้ว! รับไป ${q.xp} XP 🎉`:`ทำสำเร็จรับ ${q.xp} XP`}</div>
-          <h2 style="margin-top:14px">⏳ นับถอยหลังสอบจริง</h2>
+          <div class="sub" style="font-size:.82rem; margin-top:4px">${g.quest.done?`รับไปแล้ว ${q.xp} XP 🎉`:`ทำสำเร็จรับ ${q.xp} XP`}</div>
+          <h2 style="margin-top:14px">⏳ นับถอยหลังพิชิตยอดเขา</h2>
           ${days!==null
-            ? `<div style="font-size:1.1rem"><b>${days>0?`เหลืออีก ${days} วัน`:days===0?'วันนี้คือวันสอบ! 💪':'สอบผ่านไปแล้ว'}</b> <span class="sub">· ซ้อมมาแล้ว ${realYears()} ปี</span></div>`
+            ? `<div style="font-size:1.05rem"><b class="summitflag">${days>0?`🚩 อีก ${days} วันถึงยอดเขา TEDET`:days===0?'วันนี้คือวันสอบ! 💪':'สอบผ่านไปแล้ว'}</b><br><span class="sub">ซ้อมมาแล้ว ${realYears()} ปี</span></div>`
             : `<div class="sub" style="font-size:.9rem">ยังไม่ได้ตั้งวันสอบ</div>`}
           <div class="row" style="margin-top:6px">
             <input type="date" id="gExamDate" value="${g.examDate}" style="font-family:inherit; font-size:.9rem; padding:6px 8px; border-radius:10px; border:2px solid var(--line); background:var(--card); color:var(--ink)">
           </div>
         </div>
         <div>
-          <h2>🏆 ตารางในบ้าน</h2>
+          <h2>🏆 ธงประจำบ้าน</h2>
           <table class="glb">${lb.map((r,i)=>`<tr class="${r.name===PROF.active?'me':''}">
             <td style="width:28px">${['🥇','🥈','🥉'][i]||(i+1)}</td>
             <td>${esc(r.name)}</td>
@@ -274,11 +323,11 @@ const GAME = (()=>{
           ${weak ? `<div class="gweak">จุดที่ควรซ้อม: <b>${esc(weak[0])}</b> — ถูก ${weak[1].ok}/${weak[1].n} ข้อ</div>` : ''}
         </div>
       </div>
-      <h2 style="margin-top:16px">🏅 ตู้เหรียญตรา <span class="sub" style="font-weight:400; font-size:.85rem">${g.badges.length}/${BADGES.length}</span></h2>
+      <h2 style="margin-top:16px">🏅 กำแพงถ้วยรางวัล <span class="sub" style="font-weight:400; font-size:.85rem">${g.badges.length}/${BADGES.length}</span></h2>
       <div class="gbadges">
         ${shown.map(b=>`<div class="gb" title="${b.n}">${b.e}</div>`).join('')}
-        ${BADGES.filter(b=>!g.badges.includes(b.id)).slice(0,3).map(b=>`<div class="gb lock" title="ยังไม่ได้: ${b.h}">${b.e}</div>`).join('')}
-        <button class="btn ghost" id="gAllBadges" style="padding:6px 14px">ดูตู้ทั้งหมด</button>
+        ${BADGES.filter(b=>!g.badges.includes(b.id)).slice(0,3).map(b=>`<div class="gb ghost" title="ยังไม่ได้: ${b.h}">${b.e}</div>`).join('')}
+        <button class="btn ghost" id="gAllBadges" style="padding:6px 14px; min-height:40px">ดูตู้ทั้งหมด</button>
       </div>
     </div>`;
   }
@@ -312,5 +361,5 @@ const GAME = (()=>{
   if(new Set(BADGES.map(b=>b.id)).size!==BADGES.length) console.error('badge id ซ้ำ');
   if(new Set(QUESTS.map(q=>q.id)).size!==QUESTS.length) console.error('quest id ซ้ำ');
 
-  return {card, wire, answered, finish, board, level, streak, load, resetCombo:()=>{combo=0;}, BADGES};
+  return {card, wire, answered, finish, board, level, streak, load, rank, rankTitle, NAGA, resetCombo:()=>{combo=0;}, BADGES};
 })();

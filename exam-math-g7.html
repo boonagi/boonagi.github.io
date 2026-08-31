@@ -1,74 +1,160 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ห้องสอบ TEDET คณิต ม.1</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mitr:wght@500;600&family=Sarabun:ital,wght@0,400;0,500;0,700;1,400&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Sarabun:ital,wght@0,400;0,500;0,700;1,400&display=swap">
 <style>
-  :root{
-    --paper:#F6F8FC; --grid:#E7ECF6; --card:#FFFFFF; --line:#D9E1F0;
-    --ink:#22304A; --muted:#5D6B85;
-    --math:#3B5BDB; --math-soft:#E8ECFB; --sci:#0CA678; --sci-soft:#E3F7F0;
-    --accent:#E8590C; --ok:#2B8A3E; --ok-soft:#E6F6EA; --bad:#C92A2A; --bad-soft:#FDEBEB;
-    --flag:#F59E0B; --shadow:0 2px 10px rgba(34,48,74,.08);
+/* THEME:START */
+/* ===== TEDET Quest — design system กลาง (ฉีดเข้า index.html + ห้องสอบทุกไฟล์ตอน build) =====
+   แก้ที่นี่ที่เดียวแล้วรัน `python build-exam-banks.py` — ห้ามแก้ในไฟล์ปลายทาง */
+:root{
+  --paper:#F5F1E8; --grid:#E9E3D4; --card:#FFFDF8; --line:#D9D2C2;
+  --ink:#20302A; --muted:#4F5D56;
+  --math:#2B5FD9; --math-soft:#E3ECFF; --sci:#0B7A4E; --sci-soft:#DFF2E7;
+  --accent:#E8641C; --ok:#178A50; --ok-soft:#DCF3E6; --bad:#BE3A22; --bad-soft:#FBE3DD;
+  --flag:#F2C14E; --flag-ink:#C08A0E;
+  --shadow:0 4px 0 rgba(32,48,42,.14); --shadow-lift:0 7px 0 rgba(32,48,42,.14);
+  --btn-shadow-math:#1E46A8; --btn-shadow-sci:#075C3A; --btn-shadow-warn:#B84A10;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0F1B18; --grid:#16241F; --card:#182720; --line:#2A3B33;
+    --ink:#ECF3EC; --muted:#9FB2A6;
+    --math:#7BA8FF; --math-soft:#1B2A44; --sci:#4CCB8F; --sci-soft:#12352A;
+    --accent:#FF8A4C; --ok:#45D48C; --ok-soft:#123527; --bad:#FF8168; --bad-soft:#3B211B;
+    --flag:#F2C14E; --flag-ink:#F2C14E;
+    --shadow:0 4px 0 rgba(0,0,0,.45); --shadow-lift:0 7px 0 rgba(0,0,0,.45);
+    --btn-shadow-math:#2A3F6E; --btn-shadow-sci:#0B4A33; --btn-shadow-warn:#7E3A17;
   }
-  @media (prefers-color-scheme: dark){
-    :root:not([data-theme="light"]){
-      --paper:#0F1522; --grid:#1A2335; --card:#182136; --line:#283552;
-      --ink:#E8EDF7; --muted:#96A3BE;
-      --math:#8CA1FF; --math-soft:#232D4E; --sci:#3BD9A5; --sci-soft:#123B31;
-      --accent:#FFA94D; --ok:#69DB7C; --ok-soft:#15301C; --bad:#FF8787; --bad-soft:#3A1B1B;
-      --flag:#FCC419; --shadow:0 2px 10px rgba(0,0,0,.35);
-    }
-  }
-  :root[data-theme="dark"]{
-    --paper:#0F1522; --grid:#1A2335; --card:#182136; --line:#283552;
-    --ink:#E8EDF7; --muted:#96A3BE;
-    --math:#8CA1FF; --math-soft:#232D4E; --sci:#3BD9A5; --sci-soft:#123B31;
-    --accent:#FFA94D; --ok:#69DB7C; --ok-soft:#15301C; --bad:#FF8787; --bad-soft:#3A1B1B;
-    --flag:#FCC419; --shadow:0 2px 10px rgba(0,0,0,.35);
-  }
-  *{box-sizing:border-box}
-  body{
-    margin:0; color:var(--ink); font-family:'Sarabun',system-ui,sans-serif; font-size:17px; line-height:1.6;
-    background:var(--paper);
-    background-image:linear-gradient(var(--grid) 1px, transparent 1px),linear-gradient(90deg, var(--grid) 1px, transparent 1px);
-    background-size:28px 28px; min-height:100vh;
-  }
-  .wrap{max-width:1180px; margin:0 auto; padding:18px 16px 90px}
-  h1,h2,h3,.btn,.timer,.ycard b{font-family:'Mitr','Sarabun',sans-serif; font-weight:600}
-  h1{font-size:1.6rem; margin:.2em 0; text-wrap:balance}
-  .sub{color:var(--muted)}
-  .card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px 20px; box-shadow:var(--shadow)}
-  .btn{display:inline-flex; align-items:center; gap:8px; cursor:pointer; border:none; border-radius:12px;
-    padding:10px 18px; font-size:1rem; color:#fff; background:var(--subj); transition:filter .12s}
-  .btn:hover{filter:brightness(1.07)}
-  .btn:focus-visible{outline:3px solid var(--flag); outline-offset:2px}
-  .btn.warn{background:var(--accent)}
-  .btn.ghost{background:transparent; color:var(--ink); border:2px solid var(--line)}
-  .btn:disabled{opacity:.45; cursor:not-allowed}
-  .row{display:flex; gap:12px; flex-wrap:wrap; align-items:center}
-  .grow{flex:1}
-  .chip{display:inline-block; padding:3px 12px; border-radius:999px; font-size:.85rem; font-weight:700; background:var(--subj-soft); color:var(--subj)}
-  .chip.plain{background:var(--paper); color:var(--muted); border:1px solid var(--line)}
+}
+:root[data-theme="dark"]{
+  --paper:#0F1B18; --grid:#16241F; --card:#182720; --line:#2A3B33;
+  --ink:#ECF3EC; --muted:#9FB2A6;
+  --math:#7BA8FF; --math-soft:#1B2A44; --sci:#4CCB8F; --sci-soft:#12352A;
+  --accent:#FF8A4C; --ok:#45D48C; --ok-soft:#123527; --bad:#FF8168; --bad-soft:#3B211B;
+  --flag:#F2C14E; --flag-ink:#F2C14E;
+  --shadow:0 4px 0 rgba(0,0,0,.45); --shadow-lift:0 7px 0 rgba(0,0,0,.45);
+  --btn-shadow-math:#2A3F6E; --btn-shadow-sci:#0B4A33; --btn-shadow-warn:#7E3A17;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; color:var(--ink); font-family:'Sarabun',system-ui,sans-serif; font-size:17px; line-height:1.65;
+  background:var(--paper); min-height:100vh;
+  /* เส้นชั้นความสูงแผนที่ (topographic contours) แทนตารางกริดเดิม */
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260' viewBox='0 0 260 260'%3E%3Cg fill='none' stroke='%23808a80' stroke-opacity='.10' stroke-width='1.5'%3E%3Cpath d='M-20 60 Q 60 20 130 62 T 280 58'/%3E%3Cpath d='M-20 140 Q 70 100 140 145 T 280 138'/%3E%3Cpath d='M-20 220 Q 60 185 130 224 T 280 216'/%3E%3C/g%3E%3C/svg%3E");
+}
+h1,h2,h3,.btn,.mode-title,.navnum,.timer,.scorebig,.gring,.qnum{font-family:'Chakra Petch','Sarabun',sans-serif; font-weight:600}
+h1{font-size:1.7rem; margin:.2em 0; text-wrap:balance}
+h2{font-size:1.22rem; margin:.4em 0}
+.sub{color:var(--muted)}
+.num,.timer,.scorebig,.gring,td{font-variant-numeric:tabular-nums}
+.card{background:var(--card); border:2px solid var(--line); border-radius:18px; padding:18px 20px; box-shadow:var(--shadow)}
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; border:none; border-radius:12px;
+  padding:11px 20px; min-height:48px; font-size:1.02rem; color:#fff; background:var(--math);
+  font-family:'Chakra Petch','Sarabun',sans-serif; font-weight:600;
+  box-shadow:0 4px 0 var(--btn-shadow-math); transition:transform .09s ease, box-shadow .09s ease, filter .12s;
+}
+.btn:hover{filter:brightness(1.07)}
+.btn:active{transform:translateY(3px); box-shadow:0 1px 0 var(--btn-shadow-math)}
+.btn:focus-visible{outline:3px solid var(--flag); outline-offset:2px}
+.btn.sci{background:var(--sci); box-shadow:0 4px 0 var(--btn-shadow-sci)}
+.btn.sci:active{box-shadow:0 1px 0 var(--btn-shadow-sci)}
+.btn.warn{background:var(--accent); box-shadow:0 4px 0 var(--btn-shadow-warn)}
+.btn.warn:active{box-shadow:0 1px 0 var(--btn-shadow-warn)}
+.btn.ghost{background:transparent; color:var(--ink); border:2px solid var(--line); box-shadow:none}
+.btn.ghost:hover{border-style:dashed; filter:none}
+.btn.ghost:active{transform:translateY(2px)}
+.btn:disabled{opacity:.45; cursor:not-allowed}
+.row{display:flex; gap:12px; flex-wrap:wrap; align-items:center}
+.grow{flex:1}
+.chip{display:inline-block; padding:3px 12px; border-radius:999px; font-size:.85rem; font-weight:700; letter-spacing:.02em}
+.chip.math{background:var(--math-soft); color:var(--math)}
+.chip.sci{background:var(--sci-soft); color:var(--sci)}
+.chip.plain{background:var(--paper); color:var(--muted); border:1px solid var(--line)}
+a{color:var(--math)}
+.foot{margin-top:26px; font-size:.85rem; color:var(--muted); text-align:center}
+.modal-backdrop{position:fixed; inset:0; background:rgba(10,18,14,.6); display:flex; align-items:center; justify-content:center; z-index:50; padding:16px}
+.modal{max-width:420px; width:100%}
+.mark{font-weight:700}
+.mark.ok{color:var(--ok)} .mark.bad{color:var(--bad)}
+.exambar{position:sticky; top:0; z-index:10; background:var(--card); border-bottom:2px solid var(--line); padding:10px 16px; margin:-18px -16px 16px; display:flex; align-items:center; gap:14px; flex-wrap:wrap}
+.timer{font-size:1.3rem; color:var(--math)}
+.timer.low{color:var(--bad); animation:qpulse 1s infinite}
+@keyframes qpulse{50%{opacity:.7}}
+.scorehero{text-align:center; padding:26px; position:relative}
+.scorebig{font-size:3.2rem; color:var(--math); line-height:1}
 
+/* ---- แสตมป์ยศ S/A/B/C — ตราประทับผลสอบ ---- */
+.rankstamp{
+  position:absolute; top:14px; right:16px; width:86px; height:86px; border-radius:50%;
+  border:4px solid var(--muted); color:var(--muted); display:grid; place-items:center;
+  font-family:'Chakra Petch',sans-serif; font-size:3.2rem; font-weight:700; line-height:1;
+  transform:rotate(-8deg); background:var(--card); box-shadow:var(--shadow);
+  animation:stampin .45s cubic-bezier(.34,1.56,.64,1);
+}
+.rankstamp.S{border-color:var(--flag); color:var(--flag-ink); background:color-mix(in srgb, var(--flag) 18%, var(--card))}
+.rankstamp.A{border-color:var(--math); color:var(--math)}
+.rankstamp.B{border-color:var(--sci); color:var(--sci)}
+@keyframes stampin{from{transform:rotate(-8deg) scale(2.6); opacity:0} to{transform:rotate(-8deg) scale(1); opacity:1}}
+.rankchip{
+  position:absolute; top:6px; right:6px; width:26px; height:26px; display:grid; place-items:center;
+  font-family:'Chakra Petch',sans-serif; font-weight:700; font-size:1rem; border-radius:8px 8px 8px 2px;
+  clip-path:polygon(0 0, calc(100% - 9px) 0, 100% 9px, 100% 100%, 0 100%);
+  background:var(--muted); color:var(--card);
+}
+.rankchip.S{background:var(--flag); color:#5b3c00}
+.rankchip.A{background:var(--math)} .rankchip.B{background:var(--sci)}
+
+/* ---- เทือกเขา + ธงยอดเขา (แบนเนอร์หัวเพจ) ---- */
+.ridge{display:block; width:100%; height:auto; margin:2px 0 -4px}
+.summitflag{color:var(--flag-ink); font-family:'Chakra Petch',sans-serif; font-weight:600}
+
+/* ---- น้องนาคา (มาสคอต inline SVG) ---- */
+.naga{overflow:visible}
+.naga .eye{animation:blink 6s infinite}
+@keyframes blink{0%,94%,100%{transform:scaleY(1)} 96%,98%{transform:scaleY(.1)}}
+
+@media (prefers-reduced-motion: reduce){
+  .timer.low{animation:none}
+  .rankstamp{animation:none}
+  .naga .eye{animation:none}
+  *{transition-duration:.01ms !important; animation-duration:.01ms !important}
+}
+/* THEME:END */
+
+  .wrap{max-width:1180px; margin:0 auto; padding:18px 16px 90px}
+  h1{font-size:1.6rem}
+  .ycard b{font-family:'Chakra Petch','Sarabun',sans-serif; font-weight:600}
+  /* ปุ่ม/ชิปในห้องสอบใช้สีประจำวิชา */
+  .btn{background:var(--subj); box-shadow:0 4px 0 var(--subj-shadow)}
+  .btn:active{box-shadow:0 1px 0 var(--subj-shadow)}
+  .btn.warn{background:var(--accent); box-shadow:0 4px 0 var(--btn-shadow-warn)}
+  .btn.warn:active{box-shadow:0 1px 0 var(--btn-shadow-warn)}
+  .btn.ghost{background:transparent; box-shadow:none}
+  .chip{background:var(--subj-soft); color:var(--subj)}
+  .chip.plain{background:var(--paper); color:var(--muted); border:1px solid var(--line)}
+  .timer{color:var(--subj)}
+  a{color:var(--subj)}
+  .scorebig{color:var(--subj)}
+
+  /* การ์ดปี = แสตมป์การเดินทาง */
   .years{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; margin-top:14px}
-  .ycard{cursor:pointer; border:2px solid var(--line); border-radius:14px; padding:14px; background:var(--card); text-align:center; transition:transform .1s,border-color .1s}
-  .ycard:hover{transform:translateY(-3px); border-color:var(--subj)}
-  .ycard b{font-size:1.5rem; color:var(--subj)}
+  .ycard{cursor:pointer; border:2px dashed var(--line); border-radius:14px; padding:14px; background:var(--card);
+    text-align:center; position:relative; transition:transform .1s, border-color .1s, box-shadow .1s}
+  .ycard:hover{transform:translateY(-3px); border-color:var(--subj); box-shadow:var(--shadow)}
+  .ycard.done{border:2px solid var(--flag); outline:2px solid var(--flag); outline-offset:3px; border-style:solid}
+  .ycard b{font-size:1.6rem; color:var(--subj)}
   .ycard .best{font-size:.85rem; color:var(--ok); font-weight:700}
   .ycard .none{font-size:.85rem; color:var(--muted)}
 
-  .exambar{position:sticky; top:0; z-index:20; background:var(--card); border-bottom:2px solid var(--line);
-    padding:8px 14px; margin:-18px -16px 14px; display:flex; align-items:center; gap:12px; flex-wrap:wrap}
-  .timer{font-size:1.25rem; font-variant-numeric:tabular-nums; color:var(--subj)}
-  .timer.low{color:var(--bad); animation:blink 1s infinite}
-  @keyframes blink{50%{opacity:.5}}
-  @media (prefers-reduced-motion: reduce){ .timer.low{animation:none} .ycard:hover{transform:none} }
+  .exambar{padding:8px 14px; margin:-18px -16px 14px; gap:12px}
+  .timer{font-size:1.25rem}
 
   .examgrid{display:grid; grid-template-columns:1fr 330px; gap:16px; align-items:start}
   .pages{overflow-x:auto; border-radius:10px}
   .pages img{display:block; width:var(--zoom,100%); max-width:none; margin:0 auto 10px; border:1px solid var(--line); border-radius:8px; background:#fff}
   .sheet{position:sticky; top:64px; max-height:calc(100vh - 84px); overflow-y:auto}
-  .srow{display:flex; align-items:center; gap:8px; padding:7px 6px; border-bottom:1px solid var(--line)}
+  .srow{display:flex; align-items:center; gap:8px; padding:7px 6px; border-bottom:1px solid var(--line); flex-wrap:wrap}
   .srow:last-child{border-bottom:none}
   .srow .qn{flex:none; width:34px; font-weight:700; color:var(--muted); font-variant-numeric:tabular-nums}
   .srow.done .qn{color:var(--subj)}
@@ -79,13 +165,12 @@
     font:inherit; font-weight:700; cursor:pointer; padding:0}
   .ob.on{background:var(--subj); border-color:var(--subj); color:#fff}
   .ob:focus-visible{outline:3px solid var(--flag); outline-offset:1px}
-  .srow{flex-wrap:wrap}
   .srow.right{background:var(--ok-soft)}
   .srow.wrong{background:var(--bad-soft)}
   .srow .fb{width:100%; font-size:.88rem; padding-left:34px}
-  .checkq{padding:6px 12px; border-radius:9px; font-size:.9rem}
+  .checkq{padding:6px 12px; border-radius:9px; font-size:.9rem; min-height:36px}
   .explbtn{background:none; border:none; cursor:pointer; color:var(--subj); font:inherit; font-size:.88rem; font-weight:700; padding:0}
-  .expl-backdrop{position:fixed; inset:0; background:rgba(15,21,34,.6); z-index:60; display:flex; align-items:center; justify-content:center; padding:12px}
+  .expl-backdrop{position:fixed; inset:0; background:rgba(10,18,14,.62); z-index:60; display:flex; align-items:center; justify-content:center; padding:12px}
   .expl-panel{background:var(--card); border-radius:14px; max-width:920px; width:100%; height:92vh; display:flex; flex-direction:column}
   .expl-head{display:flex; align-items:center; gap:10px; padding:10px 16px; border-bottom:2px solid var(--line)}
   .expl-body{overflow-y:auto; padding:10px}
@@ -98,20 +183,15 @@
       transform:translateY(calc(100% - 52px)); transition:transform .2s}
     .sheet.open{transform:none}
     .sheet .handle{position:sticky; top:0; background:var(--card); padding:10px 16px; cursor:pointer;
-      font-family:'Mitr'; color:var(--subj); border-bottom:1px solid var(--line); display:flex; justify-content:space-between}
+      font-family:'Chakra Petch','Sarabun',sans-serif; color:var(--subj); border-bottom:1px solid var(--line); display:flex; justify-content:space-between}
   }
   @media (min-width:901px){ .sheet .handle{display:none} }
 
-  .scorehero{text-align:center; padding:26px}
-  .scorebig{font-family:'Mitr'; font-size:3rem; font-weight:600; color:var(--subj); line-height:1}
+  .scorehero{padding:26px}
   table.res{border-collapse:collapse; width:100%; font-variant-numeric:tabular-nums}
   table.res td,table.res th{border:1px solid var(--line); padding:6px 10px; text-align:center}
   table.res th{background:var(--paper)}
-  .mark.ok{color:var(--ok); font-weight:700} .mark.bad{color:var(--bad); font-weight:700}
-  .modal-backdrop{position:fixed; inset:0; background:rgba(15,21,34,.55); display:flex; align-items:center; justify-content:center; z-index:50; padding:16px}
-  .modal{max-width:420px; width:100%}
-  a{color:var(--subj)}
-  .foot{margin-top:26px; font-size:.85rem; color:var(--muted); text-align:center}
+  @media (prefers-reduced-motion: reduce){ .ycard:hover{transform:none} }
 </style>
 <div class="wrap" id="app"></div>
 <script>
@@ -125,6 +205,7 @@ const isVoid = (y,i) => VOIDS(y).includes(i+1);
 const TOT = y => 30 - VOIDS(y).length;
 document.documentElement.style.setProperty('--subj', `var(--${SUBJ_KEY})`);
 document.documentElement.style.setProperty('--subj-soft', `var(--${SUBJ_KEY}-soft)`);
+document.documentElement.style.setProperty('--subj-shadow', `var(--btn-shadow-${SUBJ_KEY})`);
 
 /* EXAM_DATA: {year: {pages:[dataURI,...], key:[[alt,...],...]}}
    key: แต่ละข้อ = รายการ "คำตอบที่ยอมรับ" (ทางเลือก) — คณิต: ทางเลือกละ 1 ตัวเลข, วิทย์: ทางเลือกละ 1 ชุดตัวเลือก */
@@ -234,6 +315,22 @@ const GAME = (()=>{
   const load = n => { try{ return Object.assign(BLANK(), JSON.parse(localStorage.getItem(KEY(n))||'{}')); }catch(e){ return BLANK(); } };
   const save = g => { try{ localStorage.setItem(KEY(), JSON.stringify(g)); }catch(e){} };
   let combo = 0;   // ถูกติดกันกี่ข้อ — นับเฉพาะรอบที่เปิดหน้าอยู่ ไม่ต้องเก็บลงเครื่อง
+
+  /* ยศจากเปอร์เซ็นต์คะแนน (ธีม TEDET Quest): S ≥90, A ≥75, B ≥60, C ต่ำกว่า */
+  const rank = pct => pct>=90?'S':pct>=75?'A':pct>=60?'B':'C';
+  /* ฉายานักผจญภัยตามเลเวล */
+  const rankTitle = lv => lv>=15?'ผู้พิชิตยอดเขา':lv>=10?'นายพรานโจทย์':lv>=5?'นักสำรวจ':'นักเดินป่าฝึกหัด';
+  /* น้องนาคา — มาสคอต inline SVG ตัวเดียวทั้งเว็บ */
+  const NAGA = `<svg class="naga" width="64" height="52" viewBox="0 0 64 52" aria-hidden="true">
+    <path d="M6 46 Q 2 34 12 30 T 26 22 Q 38 16 36 8" fill="none" stroke="var(--sci)" stroke-width="8" stroke-linecap="round"/>
+    <path d="M8 44 Q 6 36 14 32" fill="none" stroke="var(--flag)" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="38" cy="10" r="9" fill="var(--sci)"/>
+    <path d="M36 1 l3 -5 l3 5 z" fill="var(--flag)"/>
+    <g class="eye" style="transform-origin:41px 9px">
+      <circle cx="38" cy="9" r="1.8" fill="#fff"/><circle cx="44" cy="9" r="1.8" fill="#fff"/>
+    </g>
+    <path d="M40 14 q 3 2 6 0" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/>
+  </svg>`;
 
   /* เลเวล: ช่วงแรกขึ้นไว แล้วค่อย ๆ ห่างขึ้น — XP ที่ต้องใช้ถึงเลเวล n = 50*(n-1)² */
   const level = xp => Math.floor(Math.sqrt(Math.max(0,xp)/50))+1;
@@ -397,24 +494,39 @@ const GAME = (()=>{
 
   /* ---------- หน้าตา ---------- */
   const CSS = `
-  .gcard{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px 18px; box-shadow:var(--shadow); margin-top:16px}
+  .gcard{position:relative; background:var(--card); border:2px solid var(--line); border-radius:18px; padding:16px 18px; box-shadow:var(--shadow); margin-top:16px}
   .gcard h2{margin:0 0 10px; font-size:1.05rem}
+  .gnaga{position:absolute; top:-30px; right:22px; pointer-events:none}
+  .gtrail{display:flex; align-items:flex-start; gap:4px; margin:0 0 14px; flex-wrap:wrap; padding-bottom:16px}
+  .gtnode{position:relative; width:44px; height:44px; border-radius:50%; border:2px dashed var(--line); background:var(--paper);
+    display:grid; place-items:center; font-size:1.15rem; flex:none}
+  .gtnode i{position:absolute; top:100%; left:50%; transform:translateX(-50%); font-style:normal; font-size:.68rem; color:var(--muted); white-space:nowrap; margin-top:2px}
+  .gtnode.on{border-style:solid; border-color:var(--flag); background:color-mix(in srgb, var(--flag) 22%, var(--card))}
+  .gtnode.gflag{border-color:var(--flag)}
+  .gtline{flex:1; min-width:14px; border-top:3px dotted var(--line); margin-top:21px}
   .ggrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:16px}
   .glvl{display:flex; align-items:center; gap:12px}
-  .gring{width:54px; height:54px; border-radius:50%; display:grid; place-items:center; font-family:'Mitr'; font-size:1.25rem;
-         color:#fff; background:var(--math); flex:none}
-  .gbar{height:9px; border-radius:9px; background:var(--grid); overflow:hidden; margin-top:6px}
-  .gbar i{display:block; height:100%; background:var(--math); border-radius:9px; transition:width .5s}
+  .gcompass{flex:none}
+  .gbar{position:relative; height:10px; border-radius:9px; margin-top:8px;
+    background:repeating-linear-gradient(90deg, var(--grid) 0 8px, transparent 8px 14px)}
+  .gbar i{display:block; height:100%; background:var(--math); border-radius:9px; transition:width .6s cubic-bezier(.22,1,.36,1)}
   .gbar.q i{background:var(--ok)}
-  .gdays{display:flex; gap:5px; margin-top:8px}
-  .gday{width:26px; height:26px; border-radius:8px; background:var(--grid); display:grid; place-items:center; font-size:.7rem; color:var(--muted)}
-  .gday.on{background:var(--flag); color:#3a2400; font-weight:700}
-  .gbadges{display:flex; flex-wrap:wrap; gap:8px; margin-top:8px}
-  .gb{width:44px; height:44px; border-radius:12px; display:grid; place-items:center; font-size:1.35rem; background:var(--grid)}
-  .gb.lock{opacity:.3; filter:grayscale(1)}
+  .gdays{display:flex; gap:5px; margin-top:12px}
+  .gday{width:30px; height:30px; border-radius:50%; background:var(--paper); border:2px solid var(--line); display:grid; place-items:center; font-size:.66rem; color:var(--muted); position:relative}
+  .gday.on{border-color:var(--accent); background:color-mix(in srgb, var(--accent) 18%, var(--card)); color:var(--ink); font-weight:700}
+  .gday.on::after{content:'🔥'; position:absolute; top:-11px; font-size:.72rem}
+  .gday.on:last-child::after{animation:gflick 1.1s ease-in-out infinite alternate; transform-origin:bottom}
+  @keyframes gflick{from{transform:scaleY(1)} to{transform:scaleY(1.12) skewX(2deg)}}
+  .gseal{color:var(--ok); font-weight:700}
+  .gbadges{display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; align-items:center}
+  .gb{width:46px; height:46px; display:grid; place-items:center; font-size:1.35rem;
+    background:var(--paper); border:2px solid var(--flag);
+    clip-path:polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%); border-radius:10px}
+  .gb.lock,.gb.ghost{opacity:.35; filter:grayscale(1); border:2px dashed var(--line)}
+  .gb.ghost{opacity:.22}
   .gbwrap{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; margin-top:10px}
-  .gbrow{display:flex; gap:10px; align-items:center; background:var(--grid); border-radius:12px; padding:8px 10px}
-  .gbrow.lock .gb{opacity:.3; filter:grayscale(1)}
+  .gbrow{display:flex; gap:10px; align-items:center; background:var(--paper); border-radius:12px; padding:8px 10px}
+  .gbrow.lock .gb{opacity:.3; filter:grayscale(1); border-style:dashed}
   .gbrow .t{font-size:.82rem; line-height:1.3}
   .glb{width:100%; border-collapse:collapse; margin-top:6px; font-size:.92rem}
   .glb td{padding:5px 6px; border-bottom:1px solid var(--line)}
@@ -422,12 +534,14 @@ const GAME = (()=>{
   .gspark{width:100%; height:52px; margin-top:6px; overflow:visible}
   .gweak{background:var(--bad-soft); border-radius:10px; padding:8px 10px; margin-top:8px; font-size:.9rem}
   .gtoast{position:fixed; left:50%; bottom:28px; transform:translateX(-50%); z-index:9999; pointer-events:none;
-          background:var(--ink); color:var(--paper); padding:10px 18px; border-radius:999px; font-weight:600;
-          box-shadow:0 6px 24px rgba(0,0,0,.28); animation:gpop .3s ease-out; text-align:center}
-  .gtoast.big{border-radius:16px; padding:14px 24px; font-size:1.05rem; background:var(--flag); color:#3a2400}
+    background:var(--ink); color:var(--paper); padding:10px 18px; border-radius:999px; font-weight:600;
+    box-shadow:0 6px 24px rgba(0,0,0,.28); animation:gpop .3s ease-out; text-align:center}
+  .gtoast.big{border-radius:16px; padding:14px 24px; font-size:1.05rem; background:var(--flag); color:#3a2400;
+    animation:gstamp .45s cubic-bezier(.34,1.56,.64,1)}
   .gtoast.out{opacity:0; transition:opacity .4s}
   @keyframes gpop{from{opacity:0; transform:translate(-50%,14px)} to{opacity:1; transform:translate(-50%,0)}}
-  @media (prefers-reduced-motion:reduce){ .gtoast{animation:none} .gbar i{transition:none} }`;
+  @keyframes gstamp{from{opacity:0; transform:translate(-50%,0) scale(2)} to{opacity:1; transform:translate(-50%,0) scale(1)}}
+  @media (prefers-reduced-motion:reduce){ .gtoast{animation:none} .gbar i{transition:none} .gday.on:last-child::after{animation:none} }`;
 
   function sparkline(pts){
     if(pts.length<2) return '';
@@ -458,37 +572,53 @@ const GAME = (()=>{
     const days = g.examDate ? Math.ceil((new Date(g.examDate+'T00:00') - new Date(TODAY()+'T00:00'))/86400000) : null;
     const shown = BADGES.filter(b=> g.badges.includes(b.id)).slice(-5);
 
+    const trail = [
+      {e:'⛺', t:'เปิดแคมป์', on:true},
+      {e:'🎯', t:'เควส', on:g.quest.done},
+      {e:'✏️', t:'ฝึกวันนี้', on:set.has(TODAY())},
+      {e:'🚩', t: days!==null && days>0 ? `อีก ${days} วัน` : 'ยอดเขา', on:false, flag:true},
+    ];
+    const R = 25, CIRCUM = 2*Math.PI*R, frac = Math.min(1, cur/need);
     return `<div class="gcard" id="gcard">
+      <div class="gnaga">${NAGA}</div>
+      <div class="gtrail" role="img" aria-label="เส้นทางวันนี้">
+        ${trail.map((n,k)=>`${k?'<span class="gtline"></span>':''}<span class="gtnode ${n.on?'on':''} ${n.flag?'gflag':''}" title="${n.t}">${n.e}<i>${n.t}</i></span>`).join('')}
+      </div>
       <div class="ggrid">
         <div>
-          <h2>⭐ เลเวลของ${esc(PROF.active)}</h2>
+          <h2>🧭 ${esc(PROF.active)} · <span class="ranktitle">${rankTitle(lv)}</span></h2>
           <div class="glvl">
-            <div class="gring">${lv}</div>
+            <svg class="gcompass" width="66" height="66" viewBox="0 0 66 66">
+              <circle cx="33" cy="33" r="${R}" fill="none" stroke="var(--grid)" stroke-width="7"/>
+              <circle cx="33" cy="33" r="${R}" fill="none" stroke="var(--accent)" stroke-width="7" stroke-linecap="round"
+                stroke-dasharray="${(frac*CIRCUM).toFixed(1)} ${CIRCUM.toFixed(1)}" transform="rotate(-90 33 33)"/>
+              <text x="33" y="39" text-anchor="middle" class="gring" style="font-size:1.15rem; fill:var(--ink)">${lv}</text>
+            </svg>
             <div style="flex:1">
-              <div class="sub" style="font-size:.85rem">${cur} / ${need} XP → เลเวล ${lv+1}</div>
-              <div class="gbar"><i style="width:${Math.round(cur/need*100)}%"></i></div>
-              <div class="sub" style="font-size:.8rem; margin-top:4px">สะสมทั้งหมด ${g.xp} XP · ${g.badges.length}/${BADGES.length} เหรียญ</div>
+              <div class="sub" style="font-size:.85rem">เลเวล ${lv} · ${cur}/${need} XP → ด่านต่อไป</div>
+              <div class="gbar"><i style="width:${Math.round(frac*100)}%"></i></div>
+              <div class="sub" style="font-size:.8rem; margin-top:4px">สะสม ${g.xp} XP · ${g.badges.length}/${BADGES.length} เหรียญ</div>
             </div>
           </div>
-          <h2 style="margin-top:14px">🔥 ไฟติด ${s} วัน${s>=3?' สุดยอด!':''}</h2>
+          <h2 style="margin-top:14px">🔥 กองไฟติด ${s} วัน${s>=3?' สุดยอด!':''}</h2>
           <div class="gdays">${dots}</div>
           <div class="sub" style="font-size:.78rem; margin-top:6px">มีโล่กันไฟดับ — ขาดได้ 1 วันไฟไม่ดับ</div>
         </div>
         <div>
-          <h2>🎯 ภารกิจวันนี้</h2>
-          <div>${g.quest.done?'✅ ':''}${q.t} <span class="sub">(${Math.min(g.quest.n,q.goal)}/${q.goal})</span></div>
+          <h2>🎯 เควสวันนี้</h2>
+          <div class="gquest">${g.quest.done?'<span class="gseal">สำเร็จ ✔</span> ':''}${q.t} <span class="sub">(${Math.min(g.quest.n,q.goal)}/${q.goal})</span></div>
           <div class="gbar q"><i style="width:${qp}%"></i></div>
-          <div class="sub" style="font-size:.82rem; margin-top:4px">${g.quest.done?`ทำสำเร็จแล้ว! รับไป ${q.xp} XP 🎉`:`ทำสำเร็จรับ ${q.xp} XP`}</div>
-          <h2 style="margin-top:14px">⏳ นับถอยหลังสอบจริง</h2>
+          <div class="sub" style="font-size:.82rem; margin-top:4px">${g.quest.done?`รับไปแล้ว ${q.xp} XP 🎉`:`ทำสำเร็จรับ ${q.xp} XP`}</div>
+          <h2 style="margin-top:14px">⏳ นับถอยหลังพิชิตยอดเขา</h2>
           ${days!==null
-            ? `<div style="font-size:1.1rem"><b>${days>0?`เหลืออีก ${days} วัน`:days===0?'วันนี้คือวันสอบ! 💪':'สอบผ่านไปแล้ว'}</b> <span class="sub">· ซ้อมมาแล้ว ${realYears()} ปี</span></div>`
+            ? `<div style="font-size:1.05rem"><b class="summitflag">${days>0?`🚩 อีก ${days} วันถึงยอดเขา TEDET`:days===0?'วันนี้คือวันสอบ! 💪':'สอบผ่านไปแล้ว'}</b><br><span class="sub">ซ้อมมาแล้ว ${realYears()} ปี</span></div>`
             : `<div class="sub" style="font-size:.9rem">ยังไม่ได้ตั้งวันสอบ</div>`}
           <div class="row" style="margin-top:6px">
             <input type="date" id="gExamDate" value="${g.examDate}" style="font-family:inherit; font-size:.9rem; padding:6px 8px; border-radius:10px; border:2px solid var(--line); background:var(--card); color:var(--ink)">
           </div>
         </div>
         <div>
-          <h2>🏆 ตารางในบ้าน</h2>
+          <h2>🏆 ธงประจำบ้าน</h2>
           <table class="glb">${lb.map((r,i)=>`<tr class="${r.name===PROF.active?'me':''}">
             <td style="width:28px">${['🥇','🥈','🥉'][i]||(i+1)}</td>
             <td>${esc(r.name)}</td>
@@ -499,11 +629,11 @@ const GAME = (()=>{
           ${weak ? `<div class="gweak">จุดที่ควรซ้อม: <b>${esc(weak[0])}</b> — ถูก ${weak[1].ok}/${weak[1].n} ข้อ</div>` : ''}
         </div>
       </div>
-      <h2 style="margin-top:16px">🏅 ตู้เหรียญตรา <span class="sub" style="font-weight:400; font-size:.85rem">${g.badges.length}/${BADGES.length}</span></h2>
+      <h2 style="margin-top:16px">🏅 กำแพงถ้วยรางวัล <span class="sub" style="font-weight:400; font-size:.85rem">${g.badges.length}/${BADGES.length}</span></h2>
       <div class="gbadges">
         ${shown.map(b=>`<div class="gb" title="${b.n}">${b.e}</div>`).join('')}
-        ${BADGES.filter(b=>!g.badges.includes(b.id)).slice(0,3).map(b=>`<div class="gb lock" title="ยังไม่ได้: ${b.h}">${b.e}</div>`).join('')}
-        <button class="btn ghost" id="gAllBadges" style="padding:6px 14px">ดูตู้ทั้งหมด</button>
+        ${BADGES.filter(b=>!g.badges.includes(b.id)).slice(0,3).map(b=>`<div class="gb ghost" title="ยังไม่ได้: ${b.h}">${b.e}</div>`).join('')}
+        <button class="btn ghost" id="gAllBadges" style="padding:6px 14px; min-height:40px">ดูตู้ทั้งหมด</button>
       </div>
     </div>`;
   }
@@ -537,7 +667,7 @@ const GAME = (()=>{
   if(new Set(BADGES.map(b=>b.id)).size!==BADGES.length) console.error('badge id ซ้ำ');
   if(new Set(QUESTS.map(q=>q.id)).size!==QUESTS.length) console.error('quest id ซ้ำ');
 
-  return {card, wire, answered, finish, board, level, streak, load, resetCombo:()=>{combo=0;}, BADGES};
+  return {card, wire, answered, finish, board, level, streak, load, rank, rankTitle, NAGA, resetCombo:()=>{combo=0;}, BADGES};
 })();
 /* GAME-CORE:END */
 
@@ -563,9 +693,11 @@ function home(){
     ${GAME.card({scores: store.hist.slice(0,10).reverse().map(r=> Math.round(r.score/r.total*100))})}
     <div class="years">${YEARS.map(y=>{
       const b = store.best(y);
-      return `<div class="ycard" role="button" tabindex="0" data-y="${y}">
+      const rk = b!==null ? GAME.rank(Math.round(b/TOT(y)*100)) : null;
+      return `<div class="ycard ${b!==null?'done':''}" role="button" tabindex="0" data-y="${y}">
+        ${rk?`<span class="rankchip ${rk}">${rk}</span>`:''}
         <b>ปี ${y}</b><br>
-        ${b!==null?`<span class="best">คะแนนดีที่สุด ${b}/${TOT(y)}</span>`:`<span class="none">ยังไม่เคยทำ</span>`}</div>`;
+        ${b!==null?`<span class="best">ดีที่สุด ${b}/${TOT(y)}</span>`:`<span class="none">ยังไม่เคยทำ</span>`}</div>`;
     }).join('')}</div>
     <p class="sub" style="margin-top:14px">แตะปีที่ต้องการ แล้วเลือกได้ว่าจะ <b>🎯 ฝึก</b> (ตรวจทีละข้อ พร้อมวิธีคิด) หรือ <b>⏱️ สอบเสมือนจริง</b> (จับเวลา 90 นาที)</p>
     <p class="foot">🔒 ความเป็นส่วนตัว: เว็บนี้<b>ไม่มีการเก็บข้อมูลใด ๆ</b> ขึ้นเซิร์ฟเวอร์ — โปรไฟล์และคะแนนทั้งหมดบันทึกอยู่ในเบราว์เซอร์ของคุณเท่านั้น<br>ข้อสอบและเฉลยจากคลังข้อสอบ <a href="https://www.tedet.or.th/main/exam-library.asp" target="_blank" rel="noopener">tedet.or.th</a> · ใช้เพื่อการฝึกฝนส่วนตัว · <b>By PartnerX</b></p>`;
@@ -615,7 +747,7 @@ function showExpl(qnum){
   bd.className='expl-backdrop';
   bd.innerHTML = `<div class="expl-panel">
     <div class="expl-head">
-      <b style="font-family:'Mitr'">📖 วิธีคิดฉบับจริง ปี ${S.year}</b>
+      <b style="font-family:'Chakra Petch'">📖 วิธีคิดฉบับจริง ปี ${S.year}</b>
       <span class="sub">เลื่อนหา "ข้อ ${qnum}"</span><span class="grow"></span>
       <button class="btn ghost" id="xclose" style="padding:6px 14px">✕ ปิด</button>
     </div>
@@ -634,7 +766,7 @@ function solModal(qnum){
     bd.innerHTML = `<div class="expl-panel" style="height:auto; max-height:92vh">
       <div class="expl-head">
         <button class="btn ghost" id="xprev" style="padding:6px 10px" ${qnum<=1?'disabled':''}>◀</button>
-        <b style="font-family:'Mitr'">📖 วิธีทำข้อ ${qnum}</b>
+        <b style="font-family:'Chakra Petch'">📖 วิธีทำข้อ ${qnum}</b>
         <button class="btn ghost" id="xnext" style="padding:6px 10px" ${qnum>=30?'disabled':''}>▶</button>
         <span class="chip plain">ปี ${S.year} · เฉลยฉบับจริง</span>
         <span class="grow"></span>
@@ -816,8 +948,10 @@ function grade(){
   const pct = Math.round(score/tot*100);
   const pdf = `https://www.tedet.or.th/files/tedet${S.year}/answer/Answer_TEDET${S.year}_${PDF_SUBJ}_${GLEVEL}.pdf`;
   const hasExpl = hasSolutions(S.year);
+  const rk = GAME.rank(pct);
   app.innerHTML = `
     <div class="card scorehero">
+      ${prac?'':`<div class="rankstamp ${rk}">${rk}</div>`}
       <div style="font-size:2.8rem">${pct>=80?'🏆':pct>=50?'🎖️':'🌱'}</div>
       <h1>${prac?'สรุปการฝึก':'ผลสอบจริง'}ปี ${S.year} · ${SUBJ_NAME}</h1>
       <div class="scorebig">${score} / ${tot}</div>

@@ -1,0 +1,116 @@
+/* ===== TEDET Quest — design system กลาง (ฉีดเข้า index.html + ห้องสอบทุกไฟล์ตอน build) =====
+   แก้ที่นี่ที่เดียวแล้วรัน `python build-exam-banks.py` — ห้ามแก้ในไฟล์ปลายทาง */
+:root{
+  --paper:#F5F1E8; --grid:#E9E3D4; --card:#FFFDF8; --line:#D9D2C2;
+  --ink:#20302A; --muted:#4F5D56;
+  --math:#2B5FD9; --math-soft:#E3ECFF; --sci:#0B7A4E; --sci-soft:#DFF2E7;
+  --accent:#E8641C; --ok:#178A50; --ok-soft:#DCF3E6; --bad:#BE3A22; --bad-soft:#FBE3DD;
+  --flag:#F2C14E; --flag-ink:#C08A0E;
+  --shadow:0 4px 0 rgba(32,48,42,.14); --shadow-lift:0 7px 0 rgba(32,48,42,.14);
+  --btn-shadow-math:#1E46A8; --btn-shadow-sci:#075C3A; --btn-shadow-warn:#B84A10;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0F1B18; --grid:#16241F; --card:#182720; --line:#2A3B33;
+    --ink:#ECF3EC; --muted:#9FB2A6;
+    --math:#7BA8FF; --math-soft:#1B2A44; --sci:#4CCB8F; --sci-soft:#12352A;
+    --accent:#FF8A4C; --ok:#45D48C; --ok-soft:#123527; --bad:#FF8168; --bad-soft:#3B211B;
+    --flag:#F2C14E; --flag-ink:#F2C14E;
+    --shadow:0 4px 0 rgba(0,0,0,.45); --shadow-lift:0 7px 0 rgba(0,0,0,.45);
+    --btn-shadow-math:#2A3F6E; --btn-shadow-sci:#0B4A33; --btn-shadow-warn:#7E3A17;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0F1B18; --grid:#16241F; --card:#182720; --line:#2A3B33;
+  --ink:#ECF3EC; --muted:#9FB2A6;
+  --math:#7BA8FF; --math-soft:#1B2A44; --sci:#4CCB8F; --sci-soft:#12352A;
+  --accent:#FF8A4C; --ok:#45D48C; --ok-soft:#123527; --bad:#FF8168; --bad-soft:#3B211B;
+  --flag:#F2C14E; --flag-ink:#F2C14E;
+  --shadow:0 4px 0 rgba(0,0,0,.45); --shadow-lift:0 7px 0 rgba(0,0,0,.45);
+  --btn-shadow-math:#2A3F6E; --btn-shadow-sci:#0B4A33; --btn-shadow-warn:#7E3A17;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; color:var(--ink); font-family:'Sarabun',system-ui,sans-serif; font-size:17px; line-height:1.65;
+  background:var(--paper); min-height:100vh;
+  /* เส้นชั้นความสูงแผนที่ (topographic contours) แทนตารางกริดเดิม */
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260' viewBox='0 0 260 260'%3E%3Cg fill='none' stroke='%23808a80' stroke-opacity='.10' stroke-width='1.5'%3E%3Cpath d='M-20 60 Q 60 20 130 62 T 280 58'/%3E%3Cpath d='M-20 140 Q 70 100 140 145 T 280 138'/%3E%3Cpath d='M-20 220 Q 60 185 130 224 T 280 216'/%3E%3C/g%3E%3C/svg%3E");
+}
+h1,h2,h3,.btn,.mode-title,.navnum,.timer,.scorebig,.gring,.qnum{font-family:'Chakra Petch','Sarabun',sans-serif; font-weight:600}
+h1{font-size:1.7rem; margin:.2em 0; text-wrap:balance}
+h2{font-size:1.22rem; margin:.4em 0}
+.sub{color:var(--muted)}
+.num,.timer,.scorebig,.gring,td{font-variant-numeric:tabular-nums}
+.card{background:var(--card); border:2px solid var(--line); border-radius:18px; padding:18px 20px; box-shadow:var(--shadow)}
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; border:none; border-radius:12px;
+  padding:11px 20px; min-height:48px; font-size:1.02rem; color:#fff; background:var(--math);
+  font-family:'Chakra Petch','Sarabun',sans-serif; font-weight:600;
+  box-shadow:0 4px 0 var(--btn-shadow-math); transition:transform .09s ease, box-shadow .09s ease, filter .12s;
+}
+.btn:hover{filter:brightness(1.07)}
+.btn:active{transform:translateY(3px); box-shadow:0 1px 0 var(--btn-shadow-math)}
+.btn:focus-visible{outline:3px solid var(--flag); outline-offset:2px}
+.btn.sci{background:var(--sci); box-shadow:0 4px 0 var(--btn-shadow-sci)}
+.btn.sci:active{box-shadow:0 1px 0 var(--btn-shadow-sci)}
+.btn.warn{background:var(--accent); box-shadow:0 4px 0 var(--btn-shadow-warn)}
+.btn.warn:active{box-shadow:0 1px 0 var(--btn-shadow-warn)}
+.btn.ghost{background:transparent; color:var(--ink); border:2px solid var(--line); box-shadow:none}
+.btn.ghost:hover{border-style:dashed; filter:none}
+.btn.ghost:active{transform:translateY(2px)}
+.btn:disabled{opacity:.45; cursor:not-allowed}
+.row{display:flex; gap:12px; flex-wrap:wrap; align-items:center}
+.grow{flex:1}
+.chip{display:inline-block; padding:3px 12px; border-radius:999px; font-size:.85rem; font-weight:700; letter-spacing:.02em}
+.chip.math{background:var(--math-soft); color:var(--math)}
+.chip.sci{background:var(--sci-soft); color:var(--sci)}
+.chip.plain{background:var(--paper); color:var(--muted); border:1px solid var(--line)}
+a{color:var(--math)}
+.foot{margin-top:26px; font-size:.85rem; color:var(--muted); text-align:center}
+.modal-backdrop{position:fixed; inset:0; background:rgba(10,18,14,.6); display:flex; align-items:center; justify-content:center; z-index:50; padding:16px}
+.modal{max-width:420px; width:100%}
+.mark{font-weight:700}
+.mark.ok{color:var(--ok)} .mark.bad{color:var(--bad)}
+.exambar{position:sticky; top:0; z-index:10; background:var(--card); border-bottom:2px solid var(--line); padding:10px 16px; margin:-18px -16px 16px; display:flex; align-items:center; gap:14px; flex-wrap:wrap}
+.timer{font-size:1.3rem; color:var(--math)}
+.timer.low{color:var(--bad); animation:qpulse 1s infinite}
+@keyframes qpulse{50%{opacity:.7}}
+.scorehero{text-align:center; padding:26px; position:relative}
+.scorebig{font-size:3.2rem; color:var(--math); line-height:1}
+
+/* ---- แสตมป์ยศ S/A/B/C — ตราประทับผลสอบ ---- */
+.rankstamp{
+  position:absolute; top:14px; right:16px; width:86px; height:86px; border-radius:50%;
+  border:4px solid var(--muted); color:var(--muted); display:grid; place-items:center;
+  font-family:'Chakra Petch',sans-serif; font-size:3.2rem; font-weight:700; line-height:1;
+  transform:rotate(-8deg); background:var(--card); box-shadow:var(--shadow);
+  animation:stampin .45s cubic-bezier(.34,1.56,.64,1);
+}
+.rankstamp.S{border-color:var(--flag); color:var(--flag-ink); background:color-mix(in srgb, var(--flag) 18%, var(--card))}
+.rankstamp.A{border-color:var(--math); color:var(--math)}
+.rankstamp.B{border-color:var(--sci); color:var(--sci)}
+@keyframes stampin{from{transform:rotate(-8deg) scale(2.6); opacity:0} to{transform:rotate(-8deg) scale(1); opacity:1}}
+.rankchip{
+  position:absolute; top:6px; right:6px; width:26px; height:26px; display:grid; place-items:center;
+  font-family:'Chakra Petch',sans-serif; font-weight:700; font-size:1rem; border-radius:8px 8px 8px 2px;
+  clip-path:polygon(0 0, calc(100% - 9px) 0, 100% 9px, 100% 100%, 0 100%);
+  background:var(--muted); color:var(--card);
+}
+.rankchip.S{background:var(--flag); color:#5b3c00}
+.rankchip.A{background:var(--math)} .rankchip.B{background:var(--sci)}
+
+/* ---- เทือกเขา + ธงยอดเขา (แบนเนอร์หัวเพจ) ---- */
+.ridge{display:block; width:100%; height:auto; margin:2px 0 -4px}
+.summitflag{color:var(--flag-ink); font-family:'Chakra Petch',sans-serif; font-weight:600}
+
+/* ---- น้องนาคา (มาสคอต inline SVG) ---- */
+.naga{overflow:visible}
+.naga .eye{animation:blink 6s infinite}
+@keyframes blink{0%,94%,100%{transform:scaleY(1)} 96%,98%{transform:scaleY(.1)}}
+
+@media (prefers-reduced-motion: reduce){
+  .timer.low{animation:none}
+  .rankstamp{animation:none}
+  .naga .eye{animation:none}
+  *{transition-duration:.01ms !important; animation-duration:.01ms !important}
+}

@@ -107,15 +107,17 @@ def sci_key(v):                      # -> list of alternatives (each a set-list)
     return [sorted([v] if isinstance(v, int) else list(v))]
 
 def inject_game():
-    """ฝัง game-core.js (ต้นฉบับเดียว) ลงทั้ง index.html และ template — รันซ้ำได้ไม่พัง"""
-    game = open('game-core.js', encoding='utf-8').read().strip()
-    a, b = '/* GAME-CORE:START */', '/* GAME-CORE:END */'
-    for f in ('index.html', 'exam-bank-template.html'):
-        s = open(f, encoding='utf-8').read()
-        i, j = s.index(a), s.index(b)
-        nl = chr(10)
-        open(f, 'w', encoding='utf-8').write(s[:i + len(a)] + nl + game + nl + s[j:])
-        print('inject game-core.js ->', f)
+    """ฝังต้นฉบับกลาง (game-core.js + theme.css) ลงทั้ง index.html และ template — รันซ้ำได้ไม่พัง"""
+    nl = chr(10)
+    blocks = [('game-core.js', '/* GAME-CORE:START */', '/* GAME-CORE:END */'),
+              ('theme.css',    '/* THEME:START */',     '/* THEME:END */')]
+    for src, a, b in blocks:
+        body = open(src, encoding='utf-8').read().strip()
+        for f in ('index.html', 'exam-bank-template.html'):
+            s = open(f, encoding='utf-8').read()
+            i, j = s.index(a), s.index(b)
+            open(f, 'w', encoding='utf-8').write(s[:i + len(a)] + nl + body + nl + s[j:])
+        print('inject', src)
 
 
 def build(subj_key, subj_name, pdf_subj, emoji, title, keys, keyfn, outfile,
